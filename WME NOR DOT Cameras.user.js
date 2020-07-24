@@ -218,7 +218,7 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
                                  '</div>'
                                 ]);
         switch(this.state) {
-            case PA:
+            case "PA":
                 $("body").append(popupHTMLPA);
                 break;
             default:
