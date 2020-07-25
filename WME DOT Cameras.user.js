@@ -19,6 +19,8 @@
 // @connect      deldot.gov
 // @connect      511ny.org
 // @connect      511nj.org
+// @connect      maryland.gov
+// @connect      511virginia.org
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -31,6 +33,8 @@ let PALayer;
 let DELayer;
 let NYLayer;
 let NJLayer;
+let MDLayer;
+let VALayer;
 var settings;
 var video;
 var player;
@@ -42,13 +46,14 @@ const DEURL = 'https://tmc.deldot.gov/json/videocamera.json';
 const NYAPI = 'ZGE3YzZkNzBmMWY4NGEyZWJhOWFhODBmYTE2NmI2ZTg=';
 const NYURL = `https://511ny.org/api/getcameras?key=${atob(NYAPI)}&format=json`;
 const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=&rnd=202007201015';
+const MDURL = 'https://chartexp1.sha.maryland.gov//CHARTExportClientService/getCameraMapDataJSON.do';
+const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
 
 (function() {
     'use strict';
     //Bootstrap
     function bootstrap(tries = 1) {
-        if (W && W.loginManager && W.map && W.loginManager.user && W.model
-            && W.model.states && W.model.states.getObjectArray().length && WazeWrap && WazeWrap.Ready) {
+        if (W && W.loginManager && W.map && W.loginManager.user && W.model && W.model.states && W.model.states.getObjectArray().length && WazeWrap && WazeWrap.Ready) {
             console.log("WME DOT Cameras Loaded!");
             init();
             installIcon();
@@ -65,10 +70,12 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
             '<table border=1 style="text-align:center;width:100%;padding:10px;">',
             '<tr><td width=50 valign=middle><img src="' + warning + '" height=16 width=16></td><td style="text-align:center">Warning: WME Toolbox has caused interference with methods this script uses to play video feeds.  Until the Toolbox issues are resolved, it needs to remain disabled in order to run this script.</td><td width=50><img src="' + warning + '" height=16 width=16></td></tr>',
             '<tr><td colspan=2 style="text-align:center"><b>Enable</b></td><td style="text-align"><b>State</b></td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkPACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>PA</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkDECamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>DE</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMDCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>MD</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNYCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NY</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNJCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NJ</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkPACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>PA</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkVACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>VA</td></tr>',
             '</table>',
             'Click <a href="https://www.waze.com/forum/viewtopic.php?f=819&t=145570&start=2270#p2078310">here</a> to see the forum post regarding the conflict with the current version of WME Toolbox',
             '</div></div>'
@@ -78,6 +85,14 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
     //Build the State Layers
     function buildDOTCamLayers(state) {
         switch(state) {
+            case "VA":
+                VALayer = new OpenLayers.Layer.Markers("VALayer");
+                W.map.addLayer(VALayer);
+                break;
+            case "MD":
+                MDLayer = new OpenLayers.Layer.Markers("MDLayer");
+                W.map.addLayer(MDLayer);
+                break;
             case "PA":
                 PALayer = new OpenLayers.Layer.Markers("PALayer");
                 W.map.addLayer(PALayer);
@@ -131,7 +146,18 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
                 drawCameras("DE",resultObj[i].id,resultObj[i].lon,resultObj[i].lat,resultObj[i].urls.m3u8s,resultObj[i].title + " (" + resultObj[i].county + ")",550,300);
                 i++;
             }
-        })
+        });
+    }
+    //Get the VA Camera JSON Feed
+    function getVA() {
+        getCamFeed(VAURL,"json", function(result) {
+            var resultObj = JSON.parse(result).features;
+            var i=0;
+            while (i<resultObj.length) {
+                drawCameras("VA",resultObj[i].properties.id,resultObj[i].geometry.coordinates[0],resultObj[i].geometry.coordinates[1],resultObj[i].properties.https_url,resultObj[i].properties.description,550,300);
+            i++;
+        }
+        });
     }
     //Get the NY Camera JSON Feed
     function getNY() {
@@ -144,7 +170,7 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
                 }
                 i++;
             }
-        })
+        });
     }
     //Get the NJ Camera JSON Feed
     function getNJ() {
@@ -155,8 +181,20 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
                 drawCameras("NJ",resultObj[i].id,resultObj[i].longitude,resultObj[i].latitude,resultObj[i].CameraMainDetail[0].URL,resultObj[i].name,480,360);
                 i++;
             }
-        })
+        });
     }
+    function getMD() {
+        getCamFeed(MDURL,"json", function(result){
+            var resultObj = JSON.parse(result).data;
+            var i=0;
+            while (i<resultObj.length){
+                drawCameras("MD",resultObj[i].id,resultObj[i].lon,resultObj[i].lat,'https://' + resultObj[i].cctvIp + '/rtplive/' + resultObj[i].id + '/playlist.m3u8',resultObj[i].description,480,360);
+                i++;
+            }
+        });
+    }
+
+
     //Generate the Camera markers
     function drawCameras(state,id,x,y,url,title,width,height) {
         var size = new OpenLayers.Size(20,20);
@@ -174,6 +212,12 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
         newMarker.state = state;
         newMarker.events.register('click',newMarker,popupCam);
         switch(state) {
+            case "VA":
+                VALayer.addMarker(newMarker);
+                break;
+            case "MD":
+                MDLayer.addMarker(newMarker);
+                break;
             case "PA":
                 PALayer.addMarker(newMarker);
                 break;
@@ -252,7 +296,7 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
             } else {
                 //Bad Feed
             }
-        })
+        });
     }
     function initializeSettings()
     {
@@ -261,6 +305,8 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
         setChecked('chkDECamEnabled', settings.DECamEnabled);
         setChecked('chkNYCamEnabled', settings.NYCamEnabled);
         setChecked('chkNJCamEnabled', settings.NJCamEnabled);
+        setChecked('chkMDCamEnabled', settings.MDCamEnabled);
+        setChecked('chkVACamEnabled', settings.VACamEnabled);
 
         //Add Handler for Checkbox Setting Changes
         $('.wmedotSettingsCheckbox').change(function() {
@@ -269,11 +315,17 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
             saveSettings();
             if(this.checked) {
                 switch(settingName.substring(0,2)) {
+                    case "VA":
+                        buildDOTCamLayers("VA"); getVA();
+                        break;
                     case "PA":
                         buildDOTCamLayers("PA"); getPA();
                         break;
                     case "DE":
                         buildDOTCamLayers("DE"); getDE();
+                        break;
+                    case "MD":
+                        buildDOTCamLayers("MD"); getMD();
                         break;
                     case "NY":
                         buildDOTCamLayers("NY"); getNY();
@@ -285,6 +337,12 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
             else
             {
                 switch(settingName.substring(0,2)) {
+                    case "VA":
+                        VALayer.destroy();
+                        break;
+                    case "MD":
+                        MDLayer.destroy();
+                        break;
                     case "PA":
                         PALayer.destroy();
                         break;
@@ -303,6 +361,8 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
         if (document.getElementById('chkDECamEnabled').checked) { buildDOTCamLayers("DE"); getDE(); }
         if (document.getElementById('chkNYCamEnabled').checked) { buildDOTCamLayers("NY"); getNY(); }
         if (document.getElementById('chkNJCamEnabled').checked) { buildDOTCamLayers("NJ"); getNJ(); }
+        if (document.getElementById('chkMDCamEnabled').checked) { buildDOTCamLayers("MD"); getMD(); }
+        if (document.getElementById('chkVACamEnabled').checked) { buildDOTCamLayers("VA"); getVA(); }
     }
     //Set Checkbox from Settings
     function setChecked(checkboxId, checked) {
@@ -329,6 +389,8 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
                 DECamEnabled: settings.DECamEnabled,
                 NYCamEnabled: settings.NYCamEnabled,
                 NJCamEnabled: settings.NJCamEnabled,
+                MDCamEnabled: settings.MDCamEnabled,
+                VACamEnabled: settings.VACamEnabled,
             };
             localStorage.setItem("Camera_Settings", JSON.stringify(localsettings));
         }
