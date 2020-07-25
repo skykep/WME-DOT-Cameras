@@ -2,7 +2,7 @@
 // @name         WME NOR DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.03
+// @version      1.04
 // @description  Overlay NOR DOT Cameras on the WME Map Object
 // @author       phuz
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
