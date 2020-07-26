@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.05
+// @version      1.06
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -247,7 +247,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
         $("#gmPopupContainer").hide ();
         var popupHTMLPA = (['<div id="gmPopupContainer">' +
                             '<center><h3>' + this.title + '</h3><br>' +
-                            '<iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe>' +
+                            '<iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?CAMID=' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe>' +
                             '<br><form><button id="gmCloseDlgBtn" type="button">Close</button>' +
                             '</form></div>'
                            ]);
