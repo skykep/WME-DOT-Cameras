@@ -211,26 +211,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
         newMarker.height = height;
         newMarker.state = state;
         newMarker.events.register('click',newMarker,popupCam);
-        switch(state) {
-            case "VA":
-                VALayer.addMarker(newMarker);
-                break;
-            case "MD":
-                MDLayer.addMarker(newMarker);
-                break;
-            case "PA":
-                PALayer.addMarker(newMarker);
-                break;
-            case "DE":
-                DELayer.addMarker(newMarker);
-                break;
-            case "NY":
-                NYLayer.addMarker(newMarker);
-                break;
-            case "NJ":
-                NJLayer.addMarker(newMarker);
-                break;
-        }
+        eval(state + 'Layer.addMarker(newMarker)');
     }
     //Generate the Camera Popup
     function popupCam(evt) {
@@ -279,6 +260,11 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
                     }
                 },1000);
         }
+        //Position the modal based on the position of the click event
+        if (evt.pageX > document.getElementById("gmPopupContainer").clientWidth + 50) {$("#gmPopupContainer").css({left: evt.pageX - document.getElementById("gmPopupContainer").clientWidth - 10});}
+        else { $("#gmPopupContainer").css({left: evt.pageX + 10}); }
+        if (evt.pageY > document.getElementById("gmPopupContainer").clientHeight + 50) {$("#gmPopupContainer").css({top: evt.pageY - (document.getElementById("gmPopupContainer").clientHeight) - 10});}
+        else { $("#gmPopupContainer").css({top: evt.pageY + 10}); }
         //Add listener for popup's "Close" button
         $("#gmCloseDlgBtn").click ( function () {
             if (hls) {
@@ -314,47 +300,12 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             settings[settingName] = this.checked;
             saveSettings();
             if(this.checked) {
-                switch(settingName.substring(0,2)) {
-                    case "VA":
-                        buildDOTCamLayers("VA"); getVA();
-                        break;
-                    case "PA":
-                        buildDOTCamLayers("PA"); getPA();
-                        break;
-                    case "DE":
-                        buildDOTCamLayers("DE"); getDE();
-                        break;
-                    case "MD":
-                        buildDOTCamLayers("MD"); getMD();
-                        break;
-                    case "NY":
-                        buildDOTCamLayers("NY"); getNY();
-                        break;
-                    case "NJ":
-                        buildDOTCamLayers("NJ"); getNJ();
-                }
+                buildDOTCamLayers(settingName.substring(0,2));
+                eval("get" + settingName.substring(0,2) + "()");
             }
             else
             {
-                switch(settingName.substring(0,2)) {
-                    case "VA":
-                        VALayer.destroy();
-                        break;
-                    case "MD":
-                        MDLayer.destroy();
-                        break;
-                    case "PA":
-                        PALayer.destroy();
-                        break;
-                    case "DE":
-                        DELayer.destroy();
-                        break;
-                    case "NY":
-                        NYLayer.destroy();
-                        break;
-                    case "NJ":
-                        NJLayer.destroy();
-                }
+                eval(settingName.substring(0,2) + "Layer.destroy()");
             }
         });
         if (document.getElementById('chkPACamEnabled').checked) { buildDOTCamLayers("PA"); getPA(); }
