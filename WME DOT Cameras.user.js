@@ -84,31 +84,8 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
     }
     //Build the State Layers
     function buildDOTCamLayers(state) {
-        switch(state) {
-            case "VA":
-                VALayer = new OpenLayers.Layer.Markers("VALayer");
-                W.map.addLayer(VALayer);
-                break;
-            case "MD":
-                MDLayer = new OpenLayers.Layer.Markers("MDLayer");
-                W.map.addLayer(MDLayer);
-                break;
-            case "PA":
-                PALayer = new OpenLayers.Layer.Markers("PALayer");
-                W.map.addLayer(PALayer);
-                break;
-            case "DE":
-                DELayer = new OpenLayers.Layer.Markers("DELayer");
-                W.map.addLayer(DELayer);
-                break;
-            case "NY":
-                NYLayer = new OpenLayers.Layer.Markers("NYLayer");
-                W.map.addLayer(NYLayer);
-                break;
-            case "NJ":
-                NJLayer = new OpenLayers.Layer.Markers("NJLayer");
-                W.map.addLayer(NJLayer);
-        }
+        eval(state.substring(0,2) + 'Layer = new OpenLayers.Layer.Markers(' + state.substring(0,2) + 'Layer)');
+        eval('W.map.addLayer(' + state.substring(0,2) + 'Layer)');
     }
     function getCamFeed(url,type,callback) {
         GM_xmlhttpRequest({
