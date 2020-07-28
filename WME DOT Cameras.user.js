@@ -21,6 +21,7 @@
 // @connect      511nj.org
 // @connect      maryland.gov
 // @connect      511virginia.org
+// @connect      newengland511.org
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -31,6 +32,7 @@
 
 let PALayer;
 let DELayer;
+let NELayer;
 let NYLayer;
 let NJLayer;
 let MDLayer;
@@ -48,6 +50,7 @@ const NYURL = `https://511ny.org/api/getcameras?key=${atob(NYAPI)}&format=json`;
 const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=&rnd=202007201015';
 const MDURL = 'https://chartexp1.sha.maryland.gov//CHARTExportClientService/getCameraMapDataJSON.do';
 const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
+const NEURL = 'http://newengland511.org/Traffic/GetCameras';
 
 (function() {
     'use strict';
@@ -73,6 +76,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkDECamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>DE</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkMDCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>MD</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNYCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NY</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNECamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>New England</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNJCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NJ</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkPACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>PA</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkVACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>VA</td></tr>',
@@ -108,7 +112,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
                 var resultObj = JSON.parse(result[1]).cams;
                 var i=0;
                 while (i<resultObj.length) {
-                    drawCameras("PA",resultObj[i].md5,resultObj[i].start_lng,resultObj[i].start_lat,resultObj[i].md5,resultObj[i].title);
+                    drawCameras("PA",2,resultObj[i].start_lng,resultObj[i].start_lat,resultObj[i].md5,resultObj[i].title);
                     i++;
                 }
             }
@@ -120,7 +124,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             var resultObj = JSON.parse(result).videoCameras;
             var i=0;
             while (i<resultObj.length) {
-                drawCameras("DE",resultObj[i].id,resultObj[i].lon,resultObj[i].lat,resultObj[i].urls.m3u8s,resultObj[i].title + " (" + resultObj[i].county + ")",550,300);
+                drawCameras("DE",0,resultObj[i].lon,resultObj[i].lat,resultObj[i].urls.m3u8s,resultObj[i].title + " (" + resultObj[i].county + ")",550,300);
                 i++;
             }
         });
@@ -131,7 +135,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             var resultObj = JSON.parse(result).features;
             var i=0;
             while (i<resultObj.length) {
-                drawCameras("VA",resultObj[i].properties.id,resultObj[i].geometry.coordinates[0],resultObj[i].geometry.coordinates[1],resultObj[i].properties.https_url,resultObj[i].properties.description,550,300);
+                drawCameras("VA",0,resultObj[i].geometry.coordinates[0],resultObj[i].geometry.coordinates[1],resultObj[i].properties.https_url,resultObj[i].properties.description,550,300);
             i++;
         }
         });
@@ -143,7 +147,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             var i=0;
             while (i<resultObj.length) {
                 if (resultObj[i].VideoUrl != null) {
-                    drawCameras("NY",resultObj[i].ID,resultObj[i].Longitude,resultObj[i].Latitude,resultObj[i].VideoUrl,resultObj[i].Name,550,300);
+                    drawCameras("NY",0,resultObj[i].Longitude,resultObj[i].Latitude,resultObj[i].VideoUrl,resultObj[i].Name,550,300);
                 }
                 i++;
             }
@@ -155,7 +159,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             var resultObj = JSON.parse(result).Data.CameraData;
             var i=0;
             while (i<resultObj.length) {
-                drawCameras("NJ",resultObj[i].id,resultObj[i].longitude,resultObj[i].latitude,resultObj[i].CameraMainDetail[0].URL,resultObj[i].name,480,360);
+                drawCameras("NJ",0,resultObj[i].longitude,resultObj[i].latitude,resultObj[i].CameraMainDetail[0].URL,resultObj[i].name,480,360);
                 i++;
             }
         });
@@ -165,15 +169,24 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             var resultObj = JSON.parse(result).data;
             var i=0;
             while (i<resultObj.length){
-                drawCameras("MD",resultObj[i].id,resultObj[i].lon,resultObj[i].lat,'https://' + resultObj[i].cctvIp + '/rtplive/' + resultObj[i].id + '/playlist.m3u8',resultObj[i].description,480,360);
+                drawCameras("MD",0,resultObj[i].lon,resultObj[i].lat,'https://' + resultObj[i].cctvIp + '/rtplive/' + resultObj[i].id + '/playlist.m3u8',resultObj[i].description,480,360);
+                i++;
+            }
+        });
+    }
+    function getNE() {
+        getCamFeed(NEURL,"json", function(result){
+            var resultObj = JSON.parse(result);
+            var i=0;
+            while (i<resultObj.length){
+                drawCameras("NE",1,resultObj[i].Longitude,resultObj[i].Latitude,resultObj[i].ImageUrl,resultObj[i].Name);
                 i++;
             }
         });
     }
 
-
     //Generate the Camera markers
-    function drawCameras(state,id,x,y,url,title,width,height) {
+    function drawCameras(state,camType,x,y,url,title,width,height) {
         var size = new OpenLayers.Size(20,20);
         var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
         var icon = new OpenLayers.Icon(camIcon,size);
@@ -183,10 +196,10 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
         var newMarker = new OpenLayers.Marker(lonLat,icon);
         newMarker.title = title;
         newMarker.url = url;
-        newMarker.id = id;
         newMarker.width = width;
         newMarker.height = height;
         newMarker.state = state;
+        newMarker.camType = camType;
         newMarker.events.register('click',newMarker,popupCam);
         eval(state + 'Layer.addMarker(newMarker)');
     }
@@ -203,27 +216,31 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
         }
         $("#gmPopupContainer").remove ();
         $("#gmPopupContainer").hide ();
-        var popupHTMLPA = (['<div id="gmPopupContainer">' +
-                            '<center><h3>' + this.title + '</h3><br>' +
-                            '<iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?CAMID=' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe>' +
-                            '<br><form><button id="gmCloseDlgBtn" type="button">Close</button>' +
-                            '</form></div>'
-                           ]);
-        var popupHTMLDefault = (['<div id="gmPopupContainer">' +
-                                 '<center><h3>' + this.title + '</h3>' +
-                                 '<div id="videoDiv">' +
-                                 '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
-                                 '</div>' +
-                                 '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
-                                 '</div>'
-                                ]);
-        switch(this.state) {
-            case "PA":
-                $("body").append(popupHTMLPA);
-                break;
-            default:
-                var currentCamURL = this.url;
-                $("body").append(popupHTMLDefault);
+        var popupHTML = [];
+        popupHTML[0] = (['<div id="gmPopupContainer">' +
+                         '<center><h3>' + this.title + '</h3>' +
+                         '<div id="videoDiv">' +
+                         '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
+                         '</div>' +
+                         '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
+                         '</div>'
+                        ]);
+        popupHTML[1] = (['<div id="gmPopupContainer">' +
+                         '<center><h3>' + this.title + '</h3>' +
+                         '<img src="' + this.url + '" width=320 height=240 id="staticimage">' +
+                         '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
+                         '</div>'
+                        ]);
+        popupHTML[2] = (['<div id="gmPopupContainer">' +
+                         '<center><h3>' + this.title + '</h3><br>' +
+                         '<iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?CAMID=' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe>' +
+                         '<br><form><button id="gmCloseDlgBtn" type="button">Close</button>' +
+                         '</form></div>'
+                        ]);
+        var currentCamURL = this.url;
+        switch(this.camType) {
+            case 0:
+                $("body").append(popupHTML[0]);
                 setTimeout(function () {
                     video = document.getElementById('hlsVideo');
                     var videoSrc = currentCamURL;
@@ -236,6 +253,16 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
                         });
                     }
                 },1000);
+                break;
+            case 1:
+                $("body").append(popupHTML[1]);
+                var staticUpdateID = setInterval(function() {
+                    var camImage = document.getElementById('staticimage');
+                    camImage.src = currentCamURL + '?rand=' + Math.random();
+                }, 5000);
+                break;
+            case 2:
+                $("body").append(popupHTML[2]);
         }
         //Position the modal based on the position of the click event
         if (evt.pageX > document.getElementById("gmPopupContainer").clientWidth + 50) {$("#gmPopupContainer").css({left: evt.pageX - document.getElementById("gmPopupContainer").clientWidth - 10});}
@@ -247,6 +274,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             if (hls) {
                 hls.destroy();
             }
+            clearInterval(staticUpdateID);
             $("#gmPopupContainer").remove ();
             $("#gmPopupContainer").hide ();
         });
@@ -266,6 +294,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
         loadSettings();
         setChecked('chkPACamEnabled', settings.PACamEnabled);
         setChecked('chkDECamEnabled', settings.DECamEnabled);
+        setChecked('chkNECamEnabled', settings.NECamEnabled);
         setChecked('chkNYCamEnabled', settings.NYCamEnabled);
         setChecked('chkNJCamEnabled', settings.NJCamEnabled);
         setChecked('chkMDCamEnabled', settings.MDCamEnabled);
@@ -287,6 +316,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
         });
         if (document.getElementById('chkPACamEnabled').checked) { buildDOTCamLayers("PA"); getPA(); }
         if (document.getElementById('chkDECamEnabled').checked) { buildDOTCamLayers("DE"); getDE(); }
+        if (document.getElementById('chkNECamEnabled').checked) { buildDOTCamLayers("NE"); getNE(); }
         if (document.getElementById('chkNYCamEnabled').checked) { buildDOTCamLayers("NY"); getNY(); }
         if (document.getElementById('chkNJCamEnabled').checked) { buildDOTCamLayers("NJ"); getNJ(); }
         if (document.getElementById('chkMDCamEnabled').checked) { buildDOTCamLayers("MD"); getMD(); }
@@ -315,6 +345,7 @@ const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
             var localsettings = {
                 PACamEnabled: settings.PACamEnabled,
                 DECamEnabled: settings.DECamEnabled,
+                NECamEnabled: settings.NECamEnabled,
                 NYCamEnabled: settings.NYCamEnabled,
                 NJCamEnabled: settings.NJCamEnabled,
                 MDCamEnabled: settings.MDCamEnabled,
