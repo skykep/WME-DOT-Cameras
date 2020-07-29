@@ -14,6 +14,7 @@
 // @require      https://cdn.jsdelivr.net/npm/hls.js@latest
 // @require      https://unpkg.com/video.js/dist/video.js
 // @require      https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js
 // @connect      jsdelivr.net
 // @connect      511pa.com
 // @connect      deldot.gov
@@ -22,6 +23,12 @@
 // @connect      maryland.gov
 // @connect      511virginia.org
 // @connect      newengland511.org
+// @connect      algotraffic.com
+// @connect      nvroads.com
+// @connect      tn.gov
+// @connect      511ga.org
+// @connect      iteriscdn.com
+// @connect      skyvdn.com
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -31,6 +38,11 @@
 // ==/UserScript==
 
 let PALayer;
+let SCLayer;
+let GALayer;
+let NVLayer;
+let TNLayer;
+let ALLayer;
 let DELayer;
 let NELayer;
 let NYLayer;
@@ -51,6 +63,11 @@ const NJURL = 'https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=
 const MDURL = 'https://chartexp1.sha.maryland.gov//CHARTExportClientService/getCameraMapDataJSON.do';
 const VAURL = "https://www.511virginia.org/data/geojson/icons.cameras.geojson";
 const NEURL = 'http://newengland511.org/Traffic/GetCameras';
+const ALURL = 'https://algotraffic.com/api/v1/layers/cameras?null';
+const NVURL = 'https://nvroads.com/services/MapServiceProxy.asmx/GetFullCameraList';
+const TNURL = 'https://smartway.tn.gov/Traffic/api/Cameras/0';
+const GAURL = 'http://www.511ga.org/data/geopath/icons.cctv.geojsonp';
+const SCURL = 'https://files0.beta.iteriscdn.com/WebApps/SC/SafeTravel4/data/geojson/icons/metadata/icons.cctv.geojsonp';
 
 (function() {
     'use strict';
@@ -73,12 +90,17 @@ const NEURL = 'http://newengland511.org/Traffic/GetCameras';
             '<table border=1 style="text-align:center;width:100%;padding:10px;">',
             '<tr><td width=50 valign=middle><img src="' + warning + '" height=16 width=16></td><td style="text-align:center">Warning: WME Toolbox has caused interference with methods this script uses to play video feeds.  Until the Toolbox issues are resolved, it needs to remain disabled in order to run this script.</td><td width=50><img src="' + warning + '" height=16 width=16></td></tr>',
             '<tr><td colspan=2 style="text-align:center"><b>Enable</b></td><td style="text-align"><b>State</b></td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkALCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>AL</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkDECamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>DE</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkGACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>GA</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkMDCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>MD</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNYCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NY</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNECamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>New England</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkNJCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NJ</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNVCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>NV</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkPACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>PA</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkSCCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>SC</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkTNCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>TN</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkVACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>VA</td></tr>',
             '</table>',
             'Click <a href="https://www.waze.com/forum/viewtopic.php?f=819&t=145570&start=2270#p2078310">here</a> to see the forum post regarding the conflict with the current version of WME Toolbox',
@@ -184,8 +206,67 @@ const NEURL = 'http://newengland511.org/Traffic/GetCameras';
             }
         });
     }
+function getAL() {
+    getCamFeed(ALURL,"json", function(result){
+        var resultObj = JSON.parse(result)
+        var i=0
+        while (i<resultObj.length) {
+            //AL has their feeds broken into areas, iterate over each area to get the cameras
+            var j=0
+            while (j<resultObj[i].entries.length) {
+            drawCameras("AL",0,resultObj[i].entries[j].longitude,resultObj[i].entries[j].latitude,resultObj[i].entries[j].streamUrl,resultObj[i].entries[j].primaryRoad + ' @ ' + resultObj[i].entries[j].crossStreet)
+            j++
+            }
+            i++
+        }
+    })
+    }
+    function getNV() {
+        getCamFeed(NVURL,"xml", function(result) {
+            //NV has their listing in XML, need to get that into JSON to work with
+            let x2js = new X2JS();
+            let resultObj = x2js.xml_str2json(result).ArrayOfCamera.Camera
+            var i=0
+            while(i<resultObj.length){
+                drawCameras("NV",0,resultObj[i].Lon, resultObj[i].Lat, resultObj[i].StreamingURL.__text, resultObj[i].Description,480,360)
+                i++
+            }
+            })
+    }
+function getTN() {
+        getCamFeed(TNURL,"json", function(result){
+            var resultObj = JSON.parse(result).actions
+            var i=0
+            while (i<resultObj.length) {
+                drawCameras("TN", 0,resultObj[i].dataItem.coordinates.lng, resultObj[i].dataItem.coordinates.lat, resultObj[i].dataItem.httpsVideoUrl, resultObj[i].dataItem.title,550,300);
+                i++}
+        })
+    }
+function getGA() {
+        getCamFeed(GAURL,"json",function(results) {
+                let result = results.toString().slice(0,-2).match(/{"features":[\s\S]*/g)
+            let resultObj = JSON.parse(result).features
+                var i=0;
+                while (i<resultObj.length) {
+                    if (resultObj[i].properties.HLS) {
+                    drawCameras("GA",0,resultObj[i].geometry.coordinates[0],resultObj[i].geometry.coordinates[1],resultObj[i].properties.HLS,resultObj[i].properties.location_description); }
+                    else {drawCameras("GA",1,resultObj[i].geometry.coordinates[0],resultObj[i].geometry.coordinates[1],resultObj[i].properties.url,resultObj[i].properties.location_description);}
+                    i++;
+                }
+            })}
+function getSC() {
+    getCamFeed(SCURL,"json",function(results) {
+             let result = results.toString().slice(0,-2).match(/{\s*"features"[\s\S]*/g)
+             let resultObj = JSON.parse(result).features
+          var i=0
+          while(i<resultObj.length) {
+              drawCameras("SC",0,resultObj[i].geometry.coordinates[0],resultObj[i].geometry.coordinates[1],resultObj[i].properties.https_url,resultObj[i].properties.title)
+              i++
+          }
+    })
+}
 
-    //Generate the Camera markers
+//Generate the Camera markers
     function drawCameras(state,camType,x,y,url,title,width,height) {
         var size = new OpenLayers.Size(20,20);
         var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
@@ -245,7 +326,8 @@ const NEURL = 'http://newengland511.org/Traffic/GetCameras';
                     video = document.getElementById('hlsVideo');
                     var videoSrc = currentCamURL;
                     if (Hls.isSupported()) {
-                        hls = new Hls();
+                        console.log(videoSrc)
+                        video = new Hls();
                         hls.loadSource(videoSrc);
                         hls.attachMedia(video);
                         hls.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -299,6 +381,12 @@ const NEURL = 'http://newengland511.org/Traffic/GetCameras';
         setChecked('chkNJCamEnabled', settings.NJCamEnabled);
         setChecked('chkMDCamEnabled', settings.MDCamEnabled);
         setChecked('chkVACamEnabled', settings.VACamEnabled);
+        setChecked('chkALCamEnabled', settings.ALCamEnabled);
+        setChecked('chkTNCamEnabled', settings.TNCamEnabled);
+        setChecked('chkNVCamEnabled', settings.NVCamEnabled);
+        setChecked('chkGACamEnabled', settings.GACamEnabled);
+        setChecked('chkSCCamEnabled', settings.SCCamEnabled);
+        document.getElementById('chkGACamEnabled').disabled = true //GA is disabled until HTTP / HTTPS issue resolved
 
         //Add Handler for Checkbox Setting Changes
         $('.wmedotSettingsCheckbox').change(function() {
@@ -321,6 +409,11 @@ const NEURL = 'http://newengland511.org/Traffic/GetCameras';
         if (document.getElementById('chkNJCamEnabled').checked) { buildDOTCamLayers("NJ"); getNJ(); }
         if (document.getElementById('chkMDCamEnabled').checked) { buildDOTCamLayers("MD"); getMD(); }
         if (document.getElementById('chkVACamEnabled').checked) { buildDOTCamLayers("VA"); getVA(); }
+        if (document.getElementById('chkALCamEnabled').checked) { buildDOTCamLayers("AL"); getAL(); }
+        if (document.getElementById('chkTNCamEnabled').checked) { buildDOTCamLayers("TN"); getTN(); }
+        if (document.getElementById('chkNVCamEnabled').checked) { buildDOTCamLayers("NV"); getNV(); }
+        if (document.getElementById('chkGACamEnabled').checked) { buildDOTCamLayers("GA"); getGA(); }
+        if (document.getElementById('chkSCCamEnabled').checked) { buildDOTCamLayers("SC"); getSC(); }
     }
     //Set Checkbox from Settings
     function setChecked(checkboxId, checked) {
@@ -350,6 +443,11 @@ const NEURL = 'http://newengland511.org/Traffic/GetCameras';
                 NJCamEnabled: settings.NJCamEnabled,
                 MDCamEnabled: settings.MDCamEnabled,
                 VACamEnabled: settings.VACamEnabled,
+                ALCamEnabled: settings.ALCamEnabled,
+                TNCamEnabled: settings.TNCamEnabled,
+                NVCamEnabled: settings.NVCamEnabled,
+                GACamEnabled: settings.GACamEnabled,
+                SCCamEnabled: settings.SCCamEnabled,
             };
             localStorage.setItem("Camera_Settings", JSON.stringify(localsettings));
         }
