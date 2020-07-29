@@ -326,8 +326,8 @@ function getSC() {
                     video = document.getElementById('hlsVideo');
                     var videoSrc = currentCamURL;
                     if (Hls.isSupported()) {
-                        console.log(videoSrc)
-                        video = new Hls();
+                        console.log('Loading video from ' + videoSrc)
+                        hls = new Hls();
                         hls.loadSource(videoSrc);
                         hls.attachMedia(video);
                         hls.on(Hls.Events.MANIFEST_PARSED, function() {
