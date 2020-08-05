@@ -59,6 +59,7 @@
 // @connect      vaisala.com
 // @connect      skyvdn.com
 // @connect      cotrip.org
+// @connect      austintexas.gov
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -694,8 +695,8 @@ const config = {
         },
         URL: ['https://smartway.tn.gov/Traffic/api/Cameras/0']
     },
-    TX: {
-        URL: ['https://its.txdot.gov/ITS_WEB/FrontEnd/svc/DataRequestWebService.svc/GetCctvDataOfArea']
+    TX: {data(res) {return res},scheme(obj) {return {state:"TX",camType:1,lon:obj.location.longitude,lat:obj.location.latitude,src:obj.screenshot_address,desc:obj.location_name}},
+        URL: ['https://data.austintexas.gov/resource/b4k4-adkb.json']
     }, // TX isn't working until we figure out POST/response
     UT: {
         x(res) {
@@ -834,7 +835,7 @@ const config = {
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkSCCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>SC</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkSDCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>SD</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkTNCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>TN</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkTXCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>TX</td></tr>',
+            '<tr><td colspan=2 align=center><input type="checkbox" id="chkTXCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>TX (Austin only)</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkUTCamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>UT</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkVACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>VA</td></tr>',
             '<tr><td colspan=2 align=center><input type="checkbox" id="chkWACamEnabled" class="wmedotSettingsCheckbox"></td><td align=center>WA</td></tr>',
@@ -912,24 +913,6 @@ const config = {
 
 
     //Generate the Camera markers
-    function drawCameras(state, camType, x, y, url, title, width, height) {
-        var size = new OpenLayers.Size(20, 20);
-        var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
-        var icon = new OpenLayers.Icon(camIcon, size);
-        var epsg4326 = new OpenLayers.Projection("EPSG:4326"); //WGS 1984 projection
-        var projectTo = W.map.getProjectionObject(); //The map projection (Spherical Mercator)
-        var lonLat = new OpenLayers.LonLat(x, y).transform(epsg4326, projectTo);
-        var newMarker = new OpenLayers.Marker(lonLat, icon);
-        newMarker.title = title;
-        newMarker.url = url;
-        newMarker.width = width;
-        newMarker.height = height;
-        newMarker.state = state;
-        newMarker.camType = camType;
-        newMarker.events.register('click', newMarker, popupCam);
-        eval(state + 'Layer.addMarker(newMarker)');
-    }
-
     function drawCam(spec) {
         var size = new OpenLayers.Size(20, 20);
         var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
@@ -989,6 +972,7 @@ const config = {
                 setTimeout(function () {
                     video = document.getElementById('hlsVideo');
                     var videoSrc = currentCamURL;
+                    if (hls) {hls.destroy();}
                     if (Hls.isSupported()) {
                         console.log('Loading video from ' + videoSrc);
                         hls = new Hls();
@@ -1110,7 +1094,6 @@ const config = {
         document.getElementById('chkMTCamEnabled').disabled = true; // parser written but better feed would help
         document.getElementById('chkOKCamEnabled').disabled = true; // parser pending, would prefer better source
         document.getElementById('chkSDCamEnabled').disabled = true; // parser pending, need a good source
-        document.getElementById('chkTXCamEnabled').disabled = true; // good data feed pending
         document.getElementById('chkWVCamEnabled').disabled = true; // parser pending, post
         document.getElementById('chkWYCamEnabled').disabled = true; // parser pending
         //Add Handler for Checkbox Setting Changes
