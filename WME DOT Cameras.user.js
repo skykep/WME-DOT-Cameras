@@ -768,11 +768,6 @@ const config = {
 };
 
 
-
-
-
-
-
 (function () {
     'use strict';
     //Bootstrap
@@ -780,7 +775,9 @@ const config = {
         if (W && W.loginManager && W.map && W.loginManager.user && W.model && W.model.states && W.model.states.getObjectArray().length && WazeWrap && WazeWrap.Ready) {
             console.log("WME DOT Cameras Loaded!");
             init();
-            installIcon();
+            if (!OpenLayers.Icon) {
+                installIcon();
+            }
         } else if (tries < 1000) {
             setTimeout(function () {
                 bootstrap(++tries);
@@ -961,7 +958,7 @@ const config = {
             }
             i++;
         }
-        //clearInterval(staticUpdateID);
+        clearInterval(staticUpdateID);
         $("#gmPopupContainer").remove();
         $("#gmPopupContainer").hide();
         var popupHTML = [];
