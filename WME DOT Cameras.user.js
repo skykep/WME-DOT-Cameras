@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.09
+// @version      1.08
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -799,7 +799,7 @@ const config = {
          scheme(obj) {
              let LonLat = new OpenLayers.LonLat([obj.geometry.x,obj.geometry.y]).transform('EPSG:3857','EPSG:4326')
              console.log(obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0])
-             return {state:"WY",camType:1,lon:LonLat.lon,lat:LonLat.lat,src:obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0],desc:obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*(?=<\/i><br\/><a href)/)[0]}
+             return {state:"WY",camType:1,lon:LonLat.lon,lat:LonLat.lat,src:obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0],desc:obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*?(?=<\/i><br\/><a href)/)[0]}
          },
     URL: ['https://map.wyoroad.info/wtimap/data/wtimap-webcameras.json']
         }
