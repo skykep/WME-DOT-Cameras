@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.08
+// @version      1.09
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -60,6 +60,7 @@
 // @connect      skyvdn.com
 // @connect      cotrip.org
 // @connect      austintexas.gov
+// @connect      wyoroad.info
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -170,8 +171,21 @@ const config = {
         },
         URL: ['https://www.cotrip.org/camera/getStillCameras.do']
     },
-    CT: {
-        URL: ["https://cttravelsmart.org/List/GetData/Cameras"]
+    CT: { data(res) {
+            return res.feed.entry;
+        },
+        scheme(obj) {
+            let cam = obj.gs$cell.inputValue.split("|");
+            return {
+                state: "CT",
+                camType: 1,
+                lon: cam[2],
+                lat: cam[3],
+                src: cam[4],
+                desc: cam[5]
+            };
+        },
+        URL: ["https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/14/public/full?alt=json"]
     },
     DE: {
         data(res) {
@@ -443,8 +457,23 @@ const config = {
         },
         URL: ['http://traveler.modot.org/timconfig/feed/desktop/cameras.json'] // This is disabled until they serve over HTTPS https://traveler.modot.org/timconfig/feed/desktop/StreamingCams2.json
     },
-    MS: {
-        URL: ["https://www.mdottraffic.com/default.aspx/LoadCameraData"]
+    MS: {data(res) {
+            return res.feed.entry;
+        },
+        scheme(obj) {
+            let cam = obj.gs$cell.inputValue.split("|");
+            return {
+                state: "MS",
+                camType: 0,
+                lon: cam[2],
+                lat: cam[3],
+                src: cam[4],
+                desc: cam[5],
+                width: 480,
+                height: 360
+            };
+        },
+        URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/16/public/full?alt=json']
     },
     MT: {
         URL: ['http://roadreport.mdt.mt.gov/map/getRWISMarkers.php']
@@ -764,8 +793,16 @@ const config = {
             };
         },
         URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/8/public/full?alt=json']
-    }
-
+    },
+    WY: {data(res) {
+        return res.features},
+         scheme(obj) {
+             let LonLat = new OpenLayers.LonLat([obj.geometry.x,obj.geometry.y]).transform('EPSG:3857','EPSG:4326')
+             console.log(obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0])
+             return {state:"WY",camType:1,lon:LonLat.lon,lat:LonLat.lat,src:obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0],desc:obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*(?=<\/i><br\/><a href)/)[0]}
+         },
+    URL: ['https://map.wyoroad.info/wtimap/data/wtimap-webcameras.json']
+        }
 };
 
 
@@ -878,7 +915,6 @@ const config = {
                     resultObj = state.data(JSON.parse(res));
                 }
                 let i = 0;
-                console.log(state.scheme(resultObj[0]));
                 while (i < resultObj.length) {
                     drawCam(state.scheme(resultObj[i]));
                     i++;
@@ -912,7 +948,6 @@ const config = {
                             */
 
 
-    //Generate the Camera markers
     function drawCam(spec) {
         var size = new OpenLayers.Size(20, 20);
         var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
@@ -944,6 +979,7 @@ const config = {
         clearInterval(staticUpdateID);
         $("#gmPopupContainer").remove();
         $("#gmPopupContainer").hide();
+        console.log(this.url)
         var popupHTML = [];
         popupHTML[0] = (['<div id="gmPopupContainer">' +
                          '<center><h3>' + this.title + '</h3>' +
@@ -955,7 +991,7 @@ const config = {
                         ]);
         popupHTML[1] = (['<div id="gmPopupContainer">' +
                          '<center><h3>' + this.title + '</h3>' +
-                         '<img src="' + this.url + '" width=430 height=320 id="staticimage">' +
+                         '<img src="' + this.url + '" style="width:400px" id="staticimage">' +
                          '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
                          '</div>'
                         ]);
@@ -1087,15 +1123,12 @@ const config = {
         setChecked('chkWVCamEnabled', settings.WVCamEnabled);
         setChecked('chkWYCamEnabled', settings.WYCamEnabled);
         document.getElementById('chkAZCamEnabled').disabled = true; // awaiting AZ developer token
-        document.getElementById('chkCTCamEnabled').disabled = true; // need to figure out POST request to get consistent response
         document.getElementById('chkDCCamEnabled').disabled = true; // DC needs to fix their server
         document.getElementById('chkLACamEnabled').disabled = true; // awaiting LA devleoper token parser pending
-        document.getElementById('chkMSCamEnabled').disabled = true; // POST w/ response
         document.getElementById('chkMTCamEnabled').disabled = true; // parser written but better feed would help
         document.getElementById('chkOKCamEnabled').disabled = true; // parser pending, would prefer better source
         document.getElementById('chkSDCamEnabled').disabled = true; // parser pending, need a good source
         document.getElementById('chkWVCamEnabled').disabled = true; // parser pending, post
-        document.getElementById('chkWYCamEnabled').disabled = true; // parser pending
         //Add Handler for Checkbox Setting Changes
         $('.wmedotSettingsCheckbox').change(function () {
             var settingName = $(this)[0].id.substr(3);
@@ -1302,7 +1335,7 @@ const config = {
         }
         if (document.getElementById('chkWYCamEnabled').checked) {
             buildDOTCamLayers("WY");
-            //getCam(config.WY);
+            getCam(config.WY);
         }
     }
     //Set Checkbox from Settings
