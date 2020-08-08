@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.08
+// @version      1.10
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -137,7 +137,21 @@ const config = {
         URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/12/public/full?alt=json']
     },
     AZ: {
-        URL: ''
+        data(res) {
+            return res.feed.entry;
+        },
+        scheme(obj) {
+            let cam = obj.gs$cell.inputValue.split("|");
+            return {
+                state: "AZ",
+                camType: 1,
+                lon: cam[2],
+                lat: cam[3],
+                src: cam[4],
+                desc: cam[5]
+            };
+        },
+        URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/18/public/full?alt=json']
     },
     CA: {
         data(res) {
@@ -361,6 +375,36 @@ const config = {
             };
         },
         URL: ['https://services2.arcgis.com/CcI36Pduqd0OR4W9/arcgis/rest/services/trafficCamerasCur_Prd/FeatureServer/0/query?where=id+%3E+0&objectIds=&time=&geometry=&geometryType=esriGeometryPoint&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=none&f=pjson&token=']
+    },
+    LA: {
+        data(res) {
+            return res.feed.entry;
+        },
+        scheme(obj) {
+            let cam = obj.gs$cell.inputValue.split("|");
+            if (cam[6] == "0") {
+                return {
+                    state: "LA",
+                    camType: 0,
+                    lon: cam[2],
+                    lat: cam[3],
+                    src: cam[4],
+                    desc: cam[5],
+                    width: 480,
+                    height: 360
+                };
+            } else {
+                return {
+                    state: "LA",
+                    camType: 1,
+                    lon: cam[2],
+                    lat: cam[3],
+                    src: cam[4],
+                    desc: cam[5]
+                };
+            }
+        },
+        URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/20/public/full?alt=json']
     },
     MA: {
         data(res) {
@@ -923,31 +967,6 @@ const config = {
             j++;
         }
     }
-
-    /* MT does some weird stuff, the feed is coming from the marker on their map, but it doesn't give enough info to get the img source, more research needed
-    function getMT() {
-        getCamFeed(config.MT.URL,"xml",function(result){
-            let x2js = new X2JS();
-            let resultObj = x2js.xml_str2json(result).markers.marker;
-            var i=0;
-            console.log(resultObj)
-            while (i<resultObj.length) {
-                drawCameras("MT",2,resultObj[i]._lng,resultObj[i]._lat,resultObj[i]._html,resultObj[i]._label)
-                i++
-            }
-        })
-    } */
-    /*
-    WY is in web mercator for coordinates, need to convert to lat/lon unless an alternate source is found
-    function getWY() {
-        getCamFeed(config.WY.URL,"json",function(result){
-            var resultObj = JSON.parse(result).features;
-            var i=0;
-            while (i<resultObj.length) {
-                drawCameras("WY",1,resultObj[i].
-                            */
-
-
     function drawCam(spec) {
         var size = new OpenLayers.Size(20, 20);
         var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
@@ -1122,9 +1141,7 @@ const config = {
         setChecked('chkWICamEnabled', settings.WICamEnabled);
         setChecked('chkWVCamEnabled', settings.WVCamEnabled);
         setChecked('chkWYCamEnabled', settings.WYCamEnabled);
-        document.getElementById('chkAZCamEnabled').disabled = true; // awaiting AZ developer token
         document.getElementById('chkDCCamEnabled').disabled = true; // DC needs to fix their server
-        document.getElementById('chkLACamEnabled').disabled = true; // awaiting LA devleoper token parser pending
         document.getElementById('chkMTCamEnabled').disabled = true; // parser written but better feed would help
         document.getElementById('chkOKCamEnabled').disabled = true; // parser pending, would prefer better source
         document.getElementById('chkSDCamEnabled').disabled = true; // parser pending, need a good source
