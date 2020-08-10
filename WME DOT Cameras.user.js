@@ -983,6 +983,7 @@ const config = {
         newMarker.camType = spec.camType;
         newMarker.events.register('click', newMarker, popupCam);
         eval(spec.state + 'Layer.addMarker(newMarker)');
+        eval(spec.state + "Layer.setZIndex(1000)");
     }
     //Generate the Camera Popup
     function popupCam(evt) {
