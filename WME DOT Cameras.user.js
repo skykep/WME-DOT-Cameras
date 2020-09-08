@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.11
+// @version      1.12
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -981,6 +981,7 @@ const config = {
         newMarker.height = spec.height;
         newMarker.state = spec.state;
         newMarker.camType = spec.camType;
+        newMarker.location = lonLat;
         newMarker.events.register('click', newMarker, popupCam);
         eval(spec.state + 'Layer.addMarker(newMarker)');
         eval(spec.state + "Layer.setZIndex(1000)");
@@ -999,10 +1000,11 @@ const config = {
         clearInterval(staticUpdateID);
         $("#gmPopupContainer").remove();
         $("#gmPopupContainer").hide();
+        W.map.moveTo(this.location);
         console.log(this.url)
         var popupHTML = [];
         popupHTML[0] = (['<div id="gmPopupContainer">' +
-                         '<center><h3>' + this.title + '</h3>' +
+                         '<center><h4>' + this.title + '</h4>' +
                          '<div id="videoDiv">' +
                          '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
                          '</div>' +
@@ -1010,13 +1012,13 @@ const config = {
                          '</div>'
                         ]);
         popupHTML[1] = (['<div id="gmPopupContainer">' +
-                         '<center><h3>' + this.title + '</h3>' +
+                         '<center><h4>' + this.title + '</h4>' +
                          '<img src="' + this.url + '" style="width:400px" id="staticimage">' +
                          '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
                          '</div>'
                         ]);
         popupHTML[2] = (['<div id="gmPopupContainer">' +
-                         '<center><h3>' + this.title + '</h3><br>' +
+                         '<center><h4>' + this.title + '</h4><br>' +
                          '<iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?CAMID=' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe>' +
                          '<br><form><button id="gmCloseDlgBtn" type="button">Close</button>' +
                          '</form></div>'
@@ -1052,24 +1054,8 @@ const config = {
                 $("body").append(popupHTML[2]);
         }
         //Position the modal based on the position of the click event
-        if (evt.pageX > document.getElementById("gmPopupContainer").clientWidth + 50) {
-            $("#gmPopupContainer").css({
-                left: evt.pageX - document.getElementById("gmPopupContainer").clientWidth - 10
-            });
-        } else {
-            $("#gmPopupContainer").css({
-                left: evt.pageX + 10
-            });
-        }
-        if (evt.pageY > document.getElementById("gmPopupContainer").clientHeight + 50) {
-            $("#gmPopupContainer").css({
-                top: evt.pageY - (document.getElementById("gmPopupContainer").clientHeight) - 10
-            });
-        } else {
-            $("#gmPopupContainer").css({
-                top: evt.pageY + 10
-            });
-        }
+        $("#gmPopupContainer").css({left: document.getElementById("user-tabs").offsetWidth + W.map.getPixelFromLonLat(W.map.getCenter()).x - document.getElementById("gmPopupContainer").clientWidth - 10 });
+        $("#gmPopupContainer").css({top: document.getElementById("left-app-head").offsetHeight + W.map.getPixelFromLonLat(W.map.getCenter()).y - (document.getElementById("gmPopupContainer").clientHeight / 2) });
         //Add listener for popup's "Close" button
         $("#gmCloseDlgBtn").click(function () {
             if (hls) {
