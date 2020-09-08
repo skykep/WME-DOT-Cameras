@@ -200,7 +200,24 @@ const config = {
             };
         },
         URL: ["https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/14/public/full?alt=json"]
-    },
+    },    
+    DC: {data(res) {
+            return res.feed.entry;
+        },
+        scheme(obj) {
+            let cam = obj.gs$cell.inputValue.split("|");
+            return {
+                state: "DC",
+                camType: 0,
+                lon: cam[2],
+                lat: cam[3],
+                src: cam[4],
+                desc: cam[5],
+                width: 480,
+                height: 360
+            };
+        },
+        URL: ["https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/23/public/full?alt=json"]},
     DE: {
         data(res) {
             return res.videoCameras;
@@ -1128,7 +1145,6 @@ const config = {
         setChecked('chkWICamEnabled', settings.WICamEnabled);
         setChecked('chkWVCamEnabled', settings.WVCamEnabled);
         setChecked('chkWYCamEnabled', settings.WYCamEnabled);
-        document.getElementById('chkDCCamEnabled').disabled = true; // DC needs to fix their server
         document.getElementById('chkMTCamEnabled').disabled = true; // parser written but better feed would help
         document.getElementById('chkOKCamEnabled').disabled = true; // parser pending, would prefer better source
         document.getElementById('chkSDCamEnabled').disabled = true; // parser pending, need a good source
