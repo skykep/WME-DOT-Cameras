@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.12
+// @version      1.13
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -950,6 +950,7 @@ const config = {
     function buildDOTCamLayers(state) {
         eval(state.substring(0, 2) + 'Layer = new OpenLayers.Layer.Markers(' + state.substring(0, 2) + 'Layer)');
         eval('W.map.addLayer(' + state.substring(0, 2) + 'Layer)');
+        eval(state + "Layer.setZIndex(" + newZIndex + ")");
     }
 
     function getCamFeed(url, type, callback) {
@@ -1001,7 +1002,6 @@ const config = {
         newMarker.location = lonLat;
         newMarker.events.register('click', newMarker, popupCam);
         eval(spec.state + 'Layer.addMarker(newMarker)');
-        eval(spec.state + "Layer.setZIndex(" + newZIndex + ")");
     }
     //Generate the Camera Popup
     function popupCam(evt) {
@@ -1158,11 +1158,12 @@ const config = {
                 buildDOTCamLayers(settingName.substring(0, 2));
                 eval("getCam(config." + settingName.substring(0, 2) + ")");
             } else {
-                eval(settingName.substring(0, 2) + "Layer.destroy()");
+                //eval(settingName.substring(0, 2) + "Layer.destroy()");
+                eval('W.map.removeLayer(' + settingName.substring(0, 2) + 'Layer)');
             }
         });
         if (document.getElementById('WMEFUzoom') != null) {
-            newZIndex = document.getElementById('WMEFUzoom').style.zIndex - 10;
+            newZIndex = document.getElementById('WMEFUzoom').style.zIndex - 210;
         } else {
             newZIndex = 900;
         }
