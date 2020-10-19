@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.13
+// @version      1.14
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -1020,25 +1020,28 @@ const config = {
         W.map.moveTo(this.location);
         console.log(this.url)
         var popupHTML = [];
-        popupHTML[0] = (['<div id="gmPopupContainer">' +
-                         '<center><h4>' + this.title + '</h4>' +
-                         '<div id="videoDiv">' +
+        popupHTML[0] = (['<div id="gmPopupContainer" style="margin: 1;text-align: center;padding: 5px">' +
+                         '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modalclose" style="color:#FF0000;">X</a>' +
+                         '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
+                         '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+                         '<tr><td><div id="videoDiv">' +
                          '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
-                         '</div>' +
-                         '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
-                         '</div>'
+                         '</div></td></tr>' +
+                         '</table></div>'
                         ]);
-        popupHTML[1] = (['<div id="gmPopupContainer">' +
-                         '<center><h4>' + this.title + '</h4>' +
-                         '<img src="' + this.url + '" style="width:400px" id="staticimage">' +
-                         '<form><button id="gmCloseDlgBtn" type="button">Close</button></form>' +
-                         '</div>'
+        popupHTML[1] = (['<div id="gmPopupContainer" style="margin: 1;text-align: center;padding: 5px">' +
+                         '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modalclose" style="color:#FF0000;">X</a>' +
+                         '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
+                         '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+                         '<tr><td><img src="' + this.url + '" style="width:400px" id="staticimage"></td></tr>' +
+                         '</table></div>'
                         ]);
-        popupHTML[2] = (['<div id="gmPopupContainer">' +
-                         '<center><h4>' + this.title + '</h4><br>' +
-                         '<iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?CAMID=' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe>' +
-                         '<br><form><button id="gmCloseDlgBtn" type="button">Close</button>' +
-                         '</form></div>'
+        popupHTML[2] = (['<div id="gmPopupContainer" style="margin: 1;text-align: center;padding: 5px">' +
+                         '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modalclose" style="color:#FF0000;">X</a>' +
+                         '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
+                         '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+                         '<tr><td><iframe class="video" id="fp_embed_player" src="https://www.511pa.com/flowplayeri.aspx?CAMID=' + this.url + '"&autoplay=1 style="background: #FFFFFF;margin: 5px 20px;" frameborder=0 width=320 height=240 scrolling=no allowfullscreen=allowfullscreen></iframe></td></tr>' +
+                         '</table></div>'
                         ]);
         var currentCamURL = this.url;
         switch (this.camType) {
@@ -1082,6 +1085,7 @@ const config = {
             $("#gmPopupContainer").remove();
             $("#gmPopupContainer").hide();
         });
+        dragElement(document.getElementById("gmPopupContainer"));
         fetch(this.url)
             .then(response => {
                 if (!response.ok) {
@@ -1092,6 +1096,47 @@ const config = {
                     //Bad Feed
                 }
             });
+    }
+    // Make the DIV element draggable:
+    function dragElement(elmnt) {
+        var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        if (document.getElementById("mydivheader")) {
+            // if present, the header is where you move the DIV from:
+            document.getElementById("mydivheader").onmousedown = dragMouseDown;
+        } else {
+            // otherwise, move the DIV from anywhere inside the DIV:
+            elmnt.onmousedown = dragMouseDown;
+        }
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            // stop moving when mouse button is released:
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
     }
 
     function initializeSettings() {
@@ -1163,9 +1208,7 @@ const config = {
             }
         });
         if (document.getElementById('WMEFUzoom') != null) {
-            newZIndex = document.getElementById('WMEFUzoom').style.zIndex - 210;
-        } else {
-            newZIndex = 900;
+            document.getElementById('WMEFUzoom').style.zIndex = "45000";
         }
         if (document.getElementById('chkAKCamEnabled').checked) {
             buildDOTCamLayers("AK");
@@ -1513,7 +1556,7 @@ const config = {
     //--- CSS styles make it work...
     GM_addStyle("                                      \
 #gmPopupContainer {                                     \
-position:               fixed;                          \
+position:               absolute;                        \
 top:                    10%;                            \
 left:                   20%;                            \
 padding:                1em;                            \
@@ -1528,6 +1571,32 @@ cursor:                 pointer;                        \
 margin:                 1em 1em 0;                      \
 border:                 1px outset buttonface;          \
 }                                                       \
+hr.myhrline{\
+margin: 5px;\
+}\
+.modalclose {\
+background: lightgray;\
+color: #FFFFFF;\
+line-height: 25px;\
+position: absolute;\
+right: -12px;\
+text-align: center;\
+top: -10px;\
+width: 24px;\
+text-decoration: none;\
+font-weight: bold;\
+-webkit-border-radius: 12px;\
+-moz-border-radius: 12px;\
+border-radius: 12px;\
+-moz-box-shadow: 1px 1px 3px #000;\
+-webkit-box-shadow: 1px 1px 3px #000;\
+box-shadow: 1px 1px 3px #000;\
+text-decoration: none;\
+}\
+.modalclose:hover {\
+background: #00d9ff;\
+text-decoration: none;\
+}\
 ");
     bootstrap();
 })();
