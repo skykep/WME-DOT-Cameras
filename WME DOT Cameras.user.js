@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.16
+// @version      1.17
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -15,6 +15,7 @@
 // @require      https://unpkg.com/video.js/dist/video.js
 // @require      https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js
+// @connect      essentialintegrations.com
 // @connect      jsdelivr.net
 // @connect      511pa.com
 // @connect      deldot.gov
