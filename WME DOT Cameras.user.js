@@ -161,7 +161,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         new WazeWrap.Interface.Tab('DOT Cameras', $section.html(), initializeSettings);
         WazeWrap.Interface.ShowScriptUpdate("WME DOT Cameras", GM_info.script.version, updateMessage, "https://greasyfork.org/en/scripts/407690-wme-dot-cameras", "https://www.waze.com/forum/viewtopic.php?f=819&t=304760");
     }
-    getFeed("http://scripts.essentialintegrations.com/CSS", function (result) {
+    getFeed("http://scripts.essentialintegrations.com/CSS", "text", function (result) {
         GM_addStyle(result.responseText);
     })
     //Build the State Layers
