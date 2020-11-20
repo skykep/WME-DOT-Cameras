@@ -16,6 +16,7 @@
 // @require      https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js
 // @connect      essentialintegrations.com
+// @connect      repl.co
 // @connect      jsdelivr.net
 // @connect      511pa.com
 // @connect      deldot.gov
@@ -71,6 +72,7 @@
 // ==/UserScript==
 
 let ALLayer, AKLayer, AZLayer, ARLayer, CALayer, COLayer, CTLayer, DELayer, DCLayer, FLLayer, GALayer, HILayer, IDLayer, ILLayer, INLayer, IALayer, KSLayer, KYLayer, LALayer, MELayer, MDLayer, MALayer, MILayer, MNLayer, MSLayer, MOLayer, MTLayer, NELayer, NVLayer, NHLayer, NJLayer, NMLayer, NYLayer, NWLayer, NCLayer, NDLayer, OHLayer, OKLayer, ORLayer, PALayer, RILayer, SCLayer, SDLayer, TNLayer, TXLayer, UTLayer, VTLayer, VALayer, WALayer, WVLayer, WILayer, WYLayer;
+var prelimKeyDE;
 var settings, video, player, hls, staticUpdateID, newZIndex;
 var state, stateLength;
 let paWowzaKey = "";
@@ -86,11 +88,11 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     //Bootstrap
     function bootstrap(tries = 1) {
         if (W && W.loginManager && W.map && W.loginManager.user && W.model && W.model.states && W.model.states.getObjectArray().length && WazeWrap && WazeWrap.Ready) {
-            console.log("WME DOT Cameras Loaded!");
-            init();
             if (!OpenLayers.Icon) {
                 installIcon();
             }
+            init();
+            console.log("WME DOT Cameras Loaded!");
         } else if (tries < 1000) {
             setTimeout(function () {
                 bootstrap(++tries);
@@ -186,6 +188,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     function getCam(state) {
         let j = 0;
         while (j < state.URL.length) {
+            console.log(state.URL);
             getFeed(state.URL[j], "json", function (res) {
                 let resultObj = [];
                 if (state.x) {
@@ -979,19 +982,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         MO: {
             data(res) {
-                return res.CameraArray;
+                return res;
             },
             scheme(obj) {
                 return {
                     state: "MO",
-                    camType: 1,
-                    lon: obj.VERTICES.VERTEX_TYPE.X,
-                    lat: obj.VERTICES.VERTEX_TYPE.Y,
-                    src: obj.ImageName,
-                    desc: obj.Description
+                    camType: 0,
+                    lon: obj.x,
+                    lat: obj.y,
+                    src: obj.html,
+                    desc: obj.location
                 };
             },
-            URL: ['http://traveler.modot.org/timconfig/feed/desktop/cameras.json'] // This is disabled until they serve over HTTPS https://traveler.modot.org/timconfig/feed/desktop/StreamingCams2.json
+            URL: ['https://traveler.modot.org/timconfig/feed/desktop/StreamingCams2.json'] // This is disabled until they serve over HTTPS https://traveler.modot.org/timconfig/feed/desktop/StreamingCams2.json
         },
         MS: {
             data(res) {
@@ -1045,7 +1048,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     desc: obj.properties.Cameras[0].Description
                 };
             },
-            URL: ['https://dotfiles.azureedge.net/geojson/cameras/1595519913757/cameras.json']
+            URL: ['https://rehostjson.phuz.repl.co/NDCam']
         },
         NE: {
             data(res) {
@@ -1068,7 +1071,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return res.Data.CameraData;
             },
             scheme(obj) {
-                let online,type;
+                let online, type;
                 if (obj.StopCameraFlag == true) { online = false; } else { online = true; }
                 if ((obj.CameraMainDetail[0].cameratype == "Video") && (online == true)) { type = 3; } else { type = 1; }
                 return {
