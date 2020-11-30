@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.22
+// @version      1.23
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -248,8 +248,8 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         console.log(this.url)
         var popupHTML = [];
         popupHTML[0] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
-            '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
-            '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;"></div></td></tr>' +
             '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
             '<tr><td><div id="videoDiv">' +
             '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
@@ -257,15 +257,15 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '</table></div>'
         ]);
         popupHTML[1] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
-            '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
-            '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;"></div></td></tr>' +
             '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
             '<tr><td><img src="' + this.url + '" style="width:400px" id="staticimage"></td></tr>' +
             '</table></div>'
         ]);
         popupHTML[2] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
-            '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
-            '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;"></div></td></tr>' +
             '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
             '<tr><td><div id="videoDiv">' +
             '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
@@ -349,7 +349,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         $("#gmPopupContainerCam").css({ left: document.getElementById("user-tabs").offsetWidth + W.map.getPixelFromLonLat(W.map.getCenter()).x - document.getElementById("gmPopupContainerCam").clientWidth - 10 });
         $("#gmPopupContainerCam").css({ top: document.getElementById("left-app-head").offsetHeight + W.map.getPixelFromLonLat(W.map.getCenter()).y - (document.getElementById("gmPopupContainerCam").clientHeight / 2) });
         //Add listener for popup's "Close" button
-        $("#gmCloseDlgBtn").click(function () {
+        $("#gmCloseCamDlgBtn").click(function () {
             if (hls) {
                 hls.destroy();
             }
@@ -374,9 +374,9 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     // Make the DIV element draggable:
     function dragElement(elmnt) {
         var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        if (document.getElementById("mydivheader")) {
+        if (document.getElementById("mycamdivheader")) {
             // if present, the header is where you move the DIV from:
-            document.getElementById("mydivheader").onmousedown = dragMouseDown;
+            document.getElementById("mycamdivheader").onmousedown = dragMouseDown;
         } else {
             // otherwise, move the DIV from anywhere inside the DIV:
             elmnt.onmousedown = dragMouseDown;
