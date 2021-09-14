@@ -96,16 +96,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             init();
             W.map.events.register("moveend", W.map, function () {
                 getBounds();
-                for (const property in settings) {
-                    let state = property.replace("chk", "").replace("CamEnabled", "");
-                    if (state.length == 2) {
-                        if (document.getElementById('chk' + state + 'CamEnabled').checked) {
-                            eval('W.map.removeLayer(' + state + 'Layer)');
-                            buildDOTCamLayers(state);
-                            eval('getCam(config.' + state + ')')
-                        }
-                    }
-                }
+                redrawCams();
             });
             console.log("WME DOT Cameras Loaded!");
         } else if (tries < 1000) {
@@ -201,6 +192,18 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 callback(result);
             }
         });
+    }
+    function redrawCams() {
+        for (const property in settings) {
+            let state = property.replace("chk", "").replace("CamEnabled", "");
+            if (state.length == 2) {
+                if (document.getElementById('chk' + state + 'CamEnabled').checked) {
+                    eval('W.map.removeLayer(' + state + 'Layer)');
+                    buildDOTCamLayers(state);
+                    eval('getCam(config.' + state + ')')
+                }
+            }
+        }
     }
     function getCam(state) {
         let j = 0;
