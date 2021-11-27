@@ -11,7 +11,6 @@
 // @grant        GM_info
 // @grant        GM_fetch
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/hls.js@latest
 // @require      https://unpkg.com/video.js/dist/video.js
 // @require      https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js
