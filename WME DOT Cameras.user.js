@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.42
+// @version      1.43
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -66,6 +66,7 @@
 // @connect      ncdot.gov
 // @connect      carsprogram.org
 // @connect      ksdot.org
+// @connect      40.121.218.107
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
