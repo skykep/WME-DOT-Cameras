@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.21
+// @version      1.46
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -11,7 +11,7 @@
 // @grant        GM_info
 // @grant        GM_fetch
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/hls.js@latest
+// @require      https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.1.2-0.canary.8064/hls.js
 // @require      https://unpkg.com/video.js/dist/video.js
 // @require      https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js
@@ -63,6 +63,10 @@
 // @connect      cotrip.org
 // @connect      austintexas.gov
 // @connect      wyoroad.info
+// @connect      ncdot.gov
+// @connect      carsprogram.org
+// @connect      ksdot.org
+// @connect      40.121.218.107
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -71,12 +75,12 @@
 /* global _ */
 // ==/UserScript==
 
-let ALLayer, AKLayer, AZLayer, ARLayer, CALayer, COLayer, CTLayer, DELayer, DCLayer, FLLayer, GALayer, HILayer, IDLayer, ILLayer, INLayer, IALayer, KSLayer, KYLayer, LALayer, MELayer, MDLayer, MALayer, MILayer, MNLayer, MSLayer, MOLayer, MTLayer, NELayer, NVLayer, NHLayer, NJLayer, NMLayer, NYLayer, NWLayer, NCLayer, NDLayer, OHLayer, OKLayer, ORLayer, PALayer, RILayer, SCLayer, SDLayer, TNLayer, TXLayer, UTLayer, VTLayer, VALayer, WALayer, WVLayer, WILayer, WYLayer;
-var prelimKeyDE;
+let ALLayer, AKLayer, AZLayer, ARLayer, CALayer, COLayer, CTLayer, DELayer, DCLayer, FLLayer, GALayer, HILayer, IDLayer, ILLayer, INLayer, IALayer, KSLayer, KYLayer, LALayer, MELayer, MDLayer, MALayer, MILayer, MNLayer, MSLayer, MOLayer, MTLayer, NELayer, NVLayer, NHLayer, NJLayer, NMLayer, NYLayer, NWLayer, NCLayer, NDLayer, OHLayer, OKLayer, ORLayer, PALayer, RILayer, SCLayer, SDLayer, TNLayer, TXLayer, UTLayer, VTLayer, VALayer, WALayer, WILayer, WVLayer, WYLayer;
+let ALFeed = [], AKFeed = [], AZFeed = [], ARFeed = [], CAFeed = [], COFeed = [], CTFeed = [], DEFeed = [], DCFeed = [], FLFeed = [], GAFeed = [], HIFeed = [], IDFeed = [], ILFeed = [], INFeed = [], IAFeed = [], KSFeed = [], KYFeed = [], LAFeed = [], MEFeed = [], MDFeed = [], MAFeed = [], MIFeed = [], MNFeed = [], MSFeed = [], MOFeed = [], MTFeed = [], NEFeed = [], NVFeed = [], NHFeed = [], NJFeed = [], NMFeed = [], NYFeed = [], NWFeed = [], NCFeed = [], NDFeed = [], OHFeed = [], OKFeed = [], ORFeed = [], PAFeed = [], RIFeed = [], SCFeed = [], SDFeed = [], TNFeed = [], TXFeed = [], UTFeed = [], VTFeed = [], VAFeed = [], WAFeed = [], WIFeed = [], WVFeed = [], WYFeed;
 var settings, video, player, hls, staticUpdateID, newZIndex;
-var state, stateLength;
-let paWowzaKey = "";
-const updateMessage = "&#9658; Fixed MA";
+var state, stateLength, settingID, cameraKeys = [];
+let mapBounds;
+const updateMessage = "&#9658; Bug Fix";
 const x2js = new X2JS();
 const camIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAGXcA1uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpBRDNGNTkwRTYzQThFMzExQTc4MDhDNjAwODdEMzdEQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo2OUI0RUEyN0IwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2OUI0RUEyNkIwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1LjEgV2luZG93cyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjZGOEJBMzExNkZCMEUzMTFCOEY5QTU3QUQxM0M2MjI5IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkFEM0Y1OTBFNjNBOEUzMTFBNzgwOEM2MDA4N0QzN0RBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+TV0cjwAABbhJREFUeNpiYIAAXiZGCIMPiP//f8DwnwnI+PT/HZD8y8AAEEBQVQzTwOSfuwz/u6qAyh4y/Gf8f4/hPwMnUJSZgQEggMCyzpZAmbsILMTHcAokPhPEWT8dqJoBgvetAtMMDBIiDCf/P4bqeMXwf+t8BiOAAGJAAqVA7A1iPH/+goFBT4OB8f9LJDueAzFQgOHGLoTZYEGgpJgww0+G/68ZQArAEsryEHpRN5BuK4FIcHMhjJORVTvBYG3MwPD2CkKwKAVI/3nBABBAYOcY6zKAjGSQEmP4cGkXxMlgK4BeaCll+B/lzzDh/yegmr8vIO4HGv/l/0eG/w4WDP9fnUM4Dhl/uMzwf/6CFQ4g9RUgE3ctRvgGGSvJMfw/tw3i7sY8hv8sQMGrQE8yuFoBZe8CeRwMDIKaDAyWRgwM2xYD+exA/AuIvwAV3kaE6sSPQCuBHv2vqczwf0YL0MR7SE4CsgsTGP5///aSCZQSGDRVGPJfv2dgNDNkcP30heHbB6BpyzYyMCRVMjCwqDIcOX+LgTEtioGRhfn/P4AAbJTfK0NhGMe/Z+ecpVkrScnIlCiWkoulpFyhxgXKXCGK3XGBG/4BJcoNN665tqsxo6XshiKtyQybn82vMZPF63nPOXKYi+fieU7P8z59P9/n6NlBVNrRRDFPMUlRIGhmM0gWzk5NSCFMuDE2MqAaUJGUhDgOgNmKkXmLwMRudA11diynI9lSKhEHG+oBu9q1mHkDf9AWWkM0dgHEb4H+PqqkKD51uxpJuSoDHpIfAowyohyUveJH+9pqUjigav/9UnIfzO/frkRvBxUuwcpK/gc3PkzfzynuwRoanYuStZDKaeAkwA8QEPJ/CYfpBUCmqxp1E7uXJ6u0tUNVQbvIR+DIBzgHgQMvrZ5LZWIiSuowh6N+nQ9ZYgnNcLTzdRBsz5Ot1socWCr1KipYulrJVDIQjqjwgqsESvcPQB5QWmP2nsWem5X80IeizhaadPfHQwTxnXJTDk5ZQgeOOCC0ScY0wtPdRrc4AzY7BVZuQ8bVDhcXJLyhNnwJUFj5hTQVhmH8mQ7H5nYYkRxJw8hqBWYsLIr+gisKYobdjKguClOKLiQvgrrwqogiIr1wECHdRCCjIopNiCKZIGkthysrrWSklg36M6O5fT3fzmk7C8kDL4zt2/neP8/ze01/b6XuceWsVmAJJR56gurObjSn0/DWrEY152SmIyFBNk1sxZhBZAQTyVmEDjeiy9eAQdm4FK1gLlHg8Y3CYlXzZW12A1+GYd1Yi1u1LogXQSYgmxdnjM8jsTFNZvLMxADE3h0QS8vxNNqLJWKa2ZMXBRXwaaNmL/XdoUct+hhtjF+MFBZ+zJq5Gw6ywoRyI/xs/JjJtCj38+XWo3rGdM6pI3nlqYshmmiGx7fJpLE8rAqGZQy+49o5CNeauoeplJZZPbWfztqSWurvmV/ixrCXQjRSFQE/xI8R/dK44VJae99OorWt/Xh2tZxp0Q+903zynX/q6YLwevgy28IXyiBYxCY3cXYeIvGGRL0Isc697Z5k0NRMQj8Grd92zuDALuAuIRm8CVSohe1uYZ+T74FwADjdBFBh6GgH+mm3ZuLDSb9Ocg9YLNYZOeSyUitevupFeWWVTlzjQ0dNfQJW1fOybulPWlmyZ85wpshQC43/m+9YsR2ZTn9wg5z955+z2FO3H0PRIIqcHHzgPpAgNukwOJzAwCB3NiFQxsyyjJ37J4lMXklpfnaRyidaO3xe7+6h3JmVy2CjkcInD3EO3/T1xsFn3mobX0z+RzkfNAxcpXrIjo+RkFKp0VLkk1hfwwqJr69RODxbcH05gem/wIEN62TV13XuMxNIvqYYqCT6R6x14UHsEarkwhBxJbtnC4wmS9fXDuT2stFkxIDsp4tfbZU5MCr0jnMbIMLoKy7Gc8WunU3rxHMoCmKxUaiqij/5alOWhMPoGAAAAABJRU5ErkJggg==';
 const camRed = 'data:image/gif;base64,R0lGODlhGAAYAOYAAAsKABAOAA4MAHI0DmsxDWItDEkiCWcwDVcoC04kCkghCUYgCXw5EF0rDFIlCjcYB4M7ET0bCI5AE4c9EqNFFp5EFZtEFahHF6pIGK1HGK9IGblKG7hIG7NHGiUPBsBJHcJJHsJKHiUOBshIH8ZIH8ZJH81HIcxHIctHIc5FIs5GItFDI8Y/IdNCJNJDJM1AI8xAI8lAIsc/IsM/IcI+Ib48IL49IL08ILs6ILs7IM9BJLc5INQ/Jc4/JLk5ILc4ILY4ILU2ILU3ILM1INU+JrQ0ILM0INY8J7IyILI0ILExINY7J9c5KNY5KNc2KRIEA9c1Kdc0KtcxKxEDA9cuK9csLNctLNcuLAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFkALAAAAAAYABgAAAfZgFmCg4SFhoeGQTc1P4iOOUxVkpNQNI6ETZOak1KXWZugkzuIoaVVSIZOVSsDJVamk4U5khRYWA8WLbAyhKpVCLa2Uw0bUaWEkkRTwcweEyagSoJCkisLy8zBUwoYR5MdgjWaJxAi2cxPByFVJII2oCnMUwbYUxouVSOCP6A8EcIVqvC4gODDJA6DQjkJkICBqSKDpICiIoAILEI0JgJYYqpHIUkoQIxQkWEKFFOGjFSRQKCBgwIgTOE45OMKrEksHCW5WSWHpywxSun4SWjIDBgvWAAhytRQIAA7';
@@ -103,81 +107,109 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     function init() {
         var $section = $("<div>");
         $section.html([
-            '<div id="chkEnables">',
+            '<div id="chkCameraEnables">',
             '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=304760" target="_blank">WME DOT Cameras</a> v' + GM_info.script.version + '<br>',
             '<table border=1 style="text-align:center;width:100%;padding:10px;">',
-            '<tr><td width=50 valign=middle><img src="' + warning + '" height=16 width=16></td><td style="text-align:center">Warning: WME Toolbox has caused interference with methods this script uses to play video feeds.  Until the Toolbox issues are resolved, it needs to remain disabled in order to run this script.</td><td width=50><img src="' + warning + '" height=16 width=16></td></tr>',
-            '<tr><td colspan=2 style="text-align:center"><b>Enable</b></td><td style="text-align"><b>State</b></td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkAKCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AK</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkALCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AL</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkARCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AR</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkAZCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AZ</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkCACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>CA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkCOCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>CO</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkCTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>CT</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkDCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>DC</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkDECamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>DE</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkFLCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>FL</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkGACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>GA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkHICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>HI</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkIACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>IA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkIDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>ID</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkILCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>IL</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkINCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>IN</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkKSCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>KS</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkKYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>KY</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkLACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>LA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MD</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MI</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMNCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MN</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMOCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MO</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMSCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MS</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkMTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MT</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NC</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>ND</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNECamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NE</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNWCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>New England</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNJCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NJ</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNMCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NM</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NV</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkNYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NY</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkOHCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>OH</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkOKCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>OK</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkORCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>OR</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkPACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>PA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkRICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>RI</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkSCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>SC</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkSDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>SD</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkTNCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TN</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkTXCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TX (Austin only)</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkUTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>UT</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkVACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>VA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkWACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WA</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkWICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WI</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkWVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WV</td></tr>',
-            '<tr><td colspan=2 align=center><input type="checkbox" id="chkWYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WY</td></tr>',
+            '<tr><td width=100 style="text-align:center"><b>Enable</b></td><td style="text-align:center"><b>State</b></td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkAKCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AK</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkALCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AL</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkARCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AR</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkAZCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>AZ</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkCACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>CA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkCOCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>CO</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkCTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>CT</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkDCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>DC</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkDECamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>DE</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkFLCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>FL</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkGACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>GA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkHICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>HI</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkIACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>IA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkIDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>ID</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkILCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>IL</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkINCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>IN</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkKSCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>KS</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkKYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>KY</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkLACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>LA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MD</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MI</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMNCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MN</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMOCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MO</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMSCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MS</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkMTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>MT</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NC</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>ND</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNECamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NE</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNWCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>New England</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNJCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NJ</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNMCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NM</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NV</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NY</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkOHCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>OH</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkOKCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>OK</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkORCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>OR</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkPACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>PA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkRICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>RI</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkSCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>SC</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkSDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>SD</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkTNCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TN</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkTXCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TX (Austin only)</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkUTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>UT</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkVACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>VA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkWACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WA</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkWICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WI</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkWVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WV (waiting for SSL)</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkWYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WY</td></tr>',
             '</table>',
-            'Click <a href="https://www.waze.com/forum/viewtopic.php?f=819&t=145570&start=2270#p2078310">here</a> to see the forum post regarding the conflict with the current version of WME Toolbox',
-            '</div></div>'
+            '</div><br>',
+            '<div id="chkSettings">',
+            '<table border=1 style="text-align:center;width:100%;padding:10px;">',
+            '<tr><td width=100 style="text-align:center"><b>Enable</b></td><td style="text-align:center"><b>Setting</b></td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkHideZoomOut" class="wmeDOTCamSettings"></td><td align=center>',
+            'Hide at zoom: <select class="wmeDOTCamSettings" id="valueHideZoomLevel">',
+            '<option value=12>12</option>',
+            '<option value=13>13</option>',
+            '<option value=14>14</option>',
+            '<option value=15>15</option>',
+            '<option value=16>16</option>',
+            '<option value=17>17</option>',
+            '<option value=18>18</option>',
+            '</select>',
+            '</td></tr>',
+            '</div>'
         ].join(' '));
         new WazeWrap.Interface.Tab('DOT Cameras', $section.html(), initializeSettings);
         WazeWrap.Interface.ShowScriptUpdate("WME DOT Cameras", GM_info.script.version, updateMessage, "https://greasyfork.org/en/scripts/407690-wme-dot-cameras", "https://www.waze.com/forum/viewtopic.php?f=819&t=304760");
+        getBounds();
+        W.map.events.register("moveend", W.map, function () {
+            getBounds();
+            redrawCams();
+        });
+        $('#chkHideZoomOut').change(function () {
+            redrawCams();
+        })
+        $('#valueHideZoomLevel').change(function () {
+            redrawCams();
+        })
     }
-    getFeed("http://scripts.essentialintegrations.com/CSS", "css", function (result) {
+    function getBounds() {
+        mapBounds = W.map.getExtent();
+        mapBounds.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:4326"));
+    }
+    getFeed("http://40.121.218.107:8080/CSS", "css", "", function (result) {
         GM_addStyle(result);
     })
     //Build the State Layers
     function buildDOTCamLayers(state) {
-        eval(state.substring(0, 2) + 'Layer = new OpenLayers.Layer.Markers(' + state.substring(0, 2) + 'Layer)');
+        eval(state.substring(0, 2) + 'Layer = new OpenLayers.Layer.Markers("' + state.substring(0, 2) + 'Layer")');
         eval('W.map.addLayer(' + state.substring(0, 2) + 'Layer)');
         //eval(state + "Layer.setZIndex(" + newZIndex + ")");
-        W.map.getOLMap().setLayerIndex(eval(state.substring(0, 2) + 'Layer'), 0);
+        W.map.getOLMap().setLayerIndex(eval(state.substring(0, 2) + 'Layer'), 10);
     }
-
-    function getFeed(url, type, callback) {
+    function getFeed(url, type, headers, callback) {
         GM_xmlhttpRequest({
             method: "GET",
+            headers: { headers },
             url: url,
             onload: function (response) {
                 var result = response.responseText;
@@ -185,11 +217,32 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             }
         });
     }
+    function redrawCams() {
+        for (const property in settings) {
+            let state = property.replace("chk", "").replace("CamEnabled", "");
+            if (state.length == 2) {
+                if (document.getElementById('chk' + state + 'CamEnabled').checked) {
+                    eval('W.map.removeLayer(' + state + 'Layer)');
+                    buildDOTCamLayers(state);
+                    eval('testCam(' + state + 'Feed, config.' + state + ')');
+                    if (document.getElementById('chkHideZoomOut').checked) {
+                        if (W.map.getZoom() > document.getElementById('valueHideZoomLevel').value) {
+                            eval(state + 'Layer.setVisibility(true)');
+                        } else {
+                            eval(state + 'Layer.setVisibility(false)');
+                        }
+                    } else {
+                        eval(state + 'Layer.setVisibility(true)');
+                    }
+                }
+            }
+        }
+    }
     function getCam(state) {
         let j = 0;
         while (j < state.URL.length) {
             console.log(state.URL);
-            getFeed(state.URL[j], "json", function (res) {
+            getFeed(state.URL[j], "json", "", function (res) {
                 let resultObj = [];
                 if (state.x) {
                     resultObj = state.x(x2js.xml_str2json(res));
@@ -198,13 +251,31 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 } else {
                     resultObj = state.data(JSON.parse(res));
                 }
-                let i = 0;
-                while (i < resultObj.length) {
-                    drawCam(state.scheme(resultObj[i]));
-                    i++;
+                eval(state.scheme(resultObj[1]).state + 'Feed = resultObj');
+                testCam(resultObj, state);
+                if (document.getElementById('chkHideZoomOut').checked) {
+                    if (W.map.getZoom() > document.getElementById('valueHideZoomLevel').value) {
+                        eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(true)');
+                    } else {
+                        eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(false)');
+                    }
+                }
+                else {
+                    eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(true)');
                 }
             });
             j++;
+        }
+    }
+    function testCam(resultObj, state) {
+        let i = 0;
+        while (i < resultObj.length) {
+            if ((state.scheme(resultObj[i]).lon > mapBounds.left) && (state.scheme(resultObj[i]).lon < mapBounds.right)) {
+                if ((state.scheme(resultObj[i]).lat > mapBounds.bottom) && (state.scheme(resultObj[i]).lat < mapBounds.top)) {
+                    drawCam(state.scheme(resultObj[i]));
+                }
+            }
+            i++;
         }
     }
     function drawCam(spec) {
@@ -221,58 +292,77 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         var lonLat = new OpenLayers.LonLat(spec.lon, spec.lat).transform(epsg4326, projectTo);
         var newMarker = new OpenLayers.Marker(lonLat, icon);
         newMarker.title = spec.desc;
+        if (spec.subtitle != undefined) {
+            newMarker.subtitle = spec.subtitle;
+        } else { newMarker.subtitle = ""; }
         newMarker.url = spec.src;
         newMarker.width = spec.width;
         newMarker.height = spec.height;
         newMarker.state = spec.state;
         newMarker.camType = spec.camType;
         newMarker.location = lonLat;
+        //newMarker.setOpacity(.8);
         newMarker.events.register('click', newMarker, popupCam);
         eval(spec.state + 'Layer.addMarker(newMarker)');
     }
     //Generate the Camera Popup
     function popupCam(evt) {
-        //Check to see if WME Toolbox is running, and if it is, go no further (hopefully temporary!)
-        var i = 0;
-        while (i < document.getElementsByTagName('script').length) {
-            if (document.getElementsByTagName('script')[i].src == "chrome-extension://ihebciailciabdiknfomleeccodkdejn/scripts/WME_Toolbox.prod.min.js") {
-                alert("WME DOT Cameras cannot run if Toolbox is enabled, due to current issues with the Toolbox extension.  Please disable the Toolbox extension in order to use this script until the issue is resolved.");
-                return;
-            }
-            i++;
-        }
+        //Code to check if WME Toolbox is running, and if it is, go no further (hopefully temporary!) - Fixed 10-Dec-2020 but I'm leaving the code here because I don't trust TB yet :P
+        //var i = 0;
+        //while (i < document.getElementsByTagName('script').length) {
+        //if (document.getElementsByTagName('script')[i].src == "chrome-extension://ihebciailciabdiknfomleeccodkdejn/scripts/WME_Toolbox.prod.min.js") {
+        //alert("WME DOT Cameras cannot run if Toolbox is enabled, due to current issues with the Toolbox extension.  Please disable the Toolbox extension in order to use this script until the issue is resolved.");
+        //return;
+        //}
+        //i++;
+        //}
         clearInterval(staticUpdateID);
         $("#gmPopupContainerCam").remove();
         $("#gmPopupContainerCam").hide();
         W.map.moveTo(this.location);
-        console.log(this.url)
         var popupHTML = [];
-        popupHTML[0] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px">' +
-            '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
-            '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
-            '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+        var titleNC = "";
+
+        popupHTML[0] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;">' + this.title + '</div></td></tr>' +
             '<tr><td><div id="videoDiv">' +
             '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
             '</div></td></tr>' +
             '</table></div>'
         ]);
-        popupHTML[1] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px">' +
-            '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
-            '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
-            '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+        popupHTML[1] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;">' + this.title + '</div></td></tr>' +
+            '<tr><td><center>' + this.title + '</td></tr>' +
             '<tr><td><img src="' + this.url + '" style="width:400px" id="staticimage"></td></tr>' +
             '</table></div>'
         ]);
-        popupHTML[2] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px">' +
-            '<a href="#close" id="gmCloseDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
-            '<table border=0><tr><td><div id="mydivheader" style="min-height: 20px;"></div></td></tr>' +
-            '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+        let metaHead = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *;**script-src 'self' http://onlineerp.solution.quebec 'unsafe-inline' 'unsafe-eval';** "></meta>`;
+        popupHTML[2] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;">' + this.title + '</div></td></tr>' +
+            '<tr><td><center' + this.subtitle + '</td></tr>' +
             '<tr><td><div id="videoDiv">' +
-            '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay></video>' +
+            '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay style="width:400px"></video>' +
             '</div></td></tr>' +
             '</table></div>'
         ]);
         popupHTML[3] = popupHTML[2];
+        popupHTML[4] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;"></div></td></tr>' +
+            '<tr><td><center><h4><div id="titleNC" >' + titleNC + '</div></h4></td></tr>' +
+            '<tr><td><img src="' + this.url + '" style="width:400px" id="staticimage"></td></tr>' +
+            '</table></div>'
+        ]);
+        popupHTML[5] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
+            '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;"></div></td></tr>' +
+            '<tr><td><center><h4>' + this.title + '</h4></td></tr>' +
+            '<tr><td><a href="' + this.url + '" target="_blank">Click here to view image</a></td></tr>' +
+            '</table></div>'
+        ]);
         var currentCamURL = this.url;
         switch (this.camType) {
             case 0:
@@ -282,7 +372,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     var videoSrc = currentCamURL;
                     if (hls) { hls.destroy(); }
                     if (Hls.isSupported()) {
-                        console.log('Loading video from ' + videoSrc);
+                        //console.log('Loading video from ' + videoSrc);
                         hls = new Hls();
                         hls.loadSource(videoSrc);
                         hls.attachMedia(video);
@@ -302,15 +392,51 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 break;
             case 2:
                 $("body").append(popupHTML[2]);
-                getFeed('https://www.511pa.com/flowplayeri.aspx?CAMID=' + currentCamURL, 'text', function (res) {
-                    let paCamURL = res.match(/(?=pa511).*(?=')/);
-                    currentCamURL = "https://" + paCamURL;
+                let paCamHeaders = '"Referer": "https://www.511pa.com/webmapi.aspx?VIEWLEVEL=XD&VIEWLEVEL2=&VIEWTYPE=IS&VIEWTYPEPTC=|PX|IF|&VIEWPTCONLY=0&LAT=&LNG=&ZOOM=&RCRS_ID=&GV=&WEBMAPKEY=&fingerprint=20210616164842", "Accept": "application/text"';
+                GM_xmlhttpRequest({
+                    method: "GET",
+                    headers: {
+                        "Referer": "https://www.511pa.com/webmapi.aspx?VIEWLEVEL=XD&VIEWLEVEL2=&VIEWTYPE=IS&VIEWTYPEPTC=|PX|IF|&VIEWPTCONLY=0&LAT=&LNG=&ZOOM=&RCRS_ID=&GV=&WEBMAPKEY=&fingerprint=20210616164842",
+                        "Accept": "application/text"
+                    },
+                    url: "https://www.511pa.com/wowzKey.aspx",
+                    onload: function (response) {
+                        let result = response.responseText;
+                        getFeed('https://www.511pa.com/flowplayeri.aspx?CAMID=' + currentCamURL, 'text', paCamHeaders, function (res) {
+                            let paCamURL = res.match(/(?=pa511).*(?=')/);
+                            currentCamURL = "https://" + paCamURL + result;
+                            setTimeout(function () {
+                                video = document.getElementById('hlsVideo');
+                                var videoSrc = currentCamURL;
+                                if (hls) { hls.destroy(); }
+                                if (Hls.isSupported()) {
+                                    console.log('Loading video from ' + videoSrc);
+                                    hls = new Hls();
+                                    hls.loadSource(videoSrc);
+                                    hls.attachMedia(video);
+                                    hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                                        video.play();
+                                    });
+                                }
+                            }, 1000);
+                        });
+                    }
+                });
+
+                break;
+            case 3:
+                $("body").append(popupHTML[3]);
+                let id;
+                if (currentCamURL.includes("njtpk-wink")) {
+                    id = 1;
+                } else { id = 2; }
+                getFeed('https://511nj.org/api/client/camera/getHlsToken?Id=' + id, 'json', "", function (res) {
+                    currentCamURL = currentCamURL + "?otp=" + JSON.parse(res).Data.Token;
                     setTimeout(function () {
                         video = document.getElementById('hlsVideo');
                         var videoSrc = currentCamURL;
                         if (hls) { hls.destroy(); }
                         if (Hls.isSupported()) {
-                            console.log('Loading video from ' + videoSrc);
                             hls = new Hls();
                             hls.loadSource(videoSrc);
                             hls.attachMedia(video);
@@ -321,35 +447,33 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     }, 1000);
                 });
                 break;
-            case 3:
-                $("body").append(popupHTML[3]);
-                let id;
-                if (currentCamURL.includes("njtpk-wink")) {
-                    id = 1;
-                } else { id = 2; }
-                getFeed('https://511nj.org/api/client/camera/getHlsToken?Id=' + id, 'json', function (res) {
-                    currentCamURL = currentCamURL + "?otp=" + JSON.parse(res).Data.Token;
-                    setTimeout(function () {
-                        video = document.getElementById('hlsVideo');
-                        var videoSrc = currentCamURL;
-                        if (hls) { hls.destroy(); }
-                        if (Hls.isSupported()) {
-                            console.log('Loading video from ' + videoSrc);
-                            hls = new Hls();
-                            hls.loadSource(videoSrc);
-                            hls.attachMedia(video);
-                            hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                                video.play();
-                            });
-                        }
-                    }, 1000);
+            case 4:
+                $("body").append(popupHTML[4]);
+                getFeed('https://eapps.ncdot.gov/services/traffic-prod/v1/cameras/' + currentCamURL, 'json', "", function (res) {
+                    currentCamURL = JSON.parse(res).imageURL;
+                    titleNC = JSON.parse(res).locationName;
+                    document.getElementById("titleNC").innerHTML = titleNC;
+                    staticUpdateID = setInterval(function () {
+                        var camImage = document.getElementById('staticimage');
+                        if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}` }
+                        else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
+                    }, 100);
                 });
+                break;
+            case 5:
+                $("body").append(popupHTML[5]);
+                staticUpdateID = setInterval(function () {
+                    var camImage = document.getElementById('staticimage');
+                    if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}` }
+                    else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
+                }, 5000);
+                break;
         }
         //Position the modal based on the position of the click event
         $("#gmPopupContainerCam").css({ left: document.getElementById("user-tabs").offsetWidth + W.map.getPixelFromLonLat(W.map.getCenter()).x - document.getElementById("gmPopupContainerCam").clientWidth - 10 });
         $("#gmPopupContainerCam").css({ top: document.getElementById("left-app-head").offsetHeight + W.map.getPixelFromLonLat(W.map.getCenter()).y - (document.getElementById("gmPopupContainerCam").clientHeight / 2) });
         //Add listener for popup's "Close" button
-        $("#gmCloseDlgBtn").click(function () {
+        $("#gmCloseCamDlgBtn").click(function () {
             if (hls) {
                 hls.destroy();
             }
@@ -374,9 +498,9 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     // Make the DIV element draggable:
     function dragElement(elmnt) {
         var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        if (document.getElementById("mydivheader")) {
+        if (document.getElementById("mycamdivheader")) {
             // if present, the header is where you move the DIV from:
-            document.getElementById("mydivheader").onmousedown = dragMouseDown;
+            document.getElementById("mycamdivheader").onmousedown = dragMouseDown;
         } else {
             // otherwise, move the DIV from anywhere inside the DIV:
             elmnt.onmousedown = dragMouseDown;
@@ -421,18 +545,29 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
             setChecked('chk' + state + 'CamEnabled', eval('settings.' + state + 'CamEnabled'));
         }
+        for (var i = 0; i < document.getElementsByClassName("wmeDOTCamSettings").length; i++) {
+            settingID = document.getElementsByClassName("wmeDOTCamSettings")[i].id;
+            if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "checkbox") {
+                setChecked(settingID, eval('settings.' + settingID));
+            } else if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "select-one") {
+                $("#valueHideZoomLevel").val(eval('settings.' + settingID)).change();
+            }
+        }
         //Build the layers for the selected states
         for (var i = 0; i < stateLength; i++) {
             state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
             if (document.getElementById('chk' + state + 'CamEnabled').checked) { buildDOTCamLayers(state); eval('getCam(config.' + state + ')') }
         }
-        document.getElementById('chkKSCamEnabled').disabled = true; // changed their feeds; we're working on it
+        //document.getElementById('chkKSCamEnabled').disabled = true; // changed their feeds; we're working on it
         document.getElementById('chkMSCamEnabled').disabled = true; // ??
         document.getElementById('chkMTCamEnabled').disabled = true; // parser written but better feed would help
         document.getElementById('chkOKCamEnabled').disabled = true; // parser pending, would prefer better source
         document.getElementById('chkSDCamEnabled').disabled = true; // parser pending, need a good source
         document.getElementById('chkTXCamEnabled').disabled = true; // not working
-        document.getElementById('chkWVCamEnabled').disabled = true; // parser pending, post
+        //document.getElementById('chkWVCamEnabled').disabled = true; // still using http
+        //document.getElementById('chkHICamEnabled').disabled = true; // still using http
+        //document.getElementById('chkKYCamEnabled').disabled = true; // still using http
+
         //Add Handler for Checkbox Setting Changes
         $('.wmeDOTCamCheckbox').change(function () {
             var settingName = $(this)[0].id.substr(3);
@@ -446,7 +581,11 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 eval('W.map.removeLayer(' + settingName.substring(0, 2) + 'Layer)');
             }
         });
-
+        $('.wmeDOTCamSettings').change(function () {
+            var settingName = $(this)[0].id;
+            settings[settingName] = this.checked;
+            saveSettings();
+        });
     }
     //Set Checkbox from Settings
     function setChecked(checkboxId, checked) {
@@ -455,9 +594,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     //Load Saved Settings
     function loadSettings() {
         var loadedSettings = $.parseJSON(localStorage.getItem("Camera_Settings"));
-        var defaultSettings = {
-            Enabled: false,
-        };
+        var defaultSettings = { Enabled: false, };
         settings = loadedSettings ? loadedSettings : defaultSettings;
         for (var prop in defaultSettings) {
             if (!settings.hasOwnProperty(prop)) {
@@ -472,6 +609,15 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             for (var i = 0; i < stateLength; i++) {
                 state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
                 eval('localsettings.' + state + 'CamEnabled = document.getElementsByClassName("wmeDOTCamCheckbox")[i].checked');
+            }
+            for (var i = 0; i < document.getElementsByClassName("wmeDOTCamSettings").length; i++) {
+                if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "checkbox") {
+                    settingID = document.getElementsByClassName("wmeDOTCamSettings")[i].id;
+                    eval('localsettings.' + settingID + ' = document.getElementsByClassName("wmeDOTCamSettings")[i].checked');
+                } else if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "select-one") {
+                    settingID = document.getElementsByClassName("wmeDOTCamSettings")[i].id;
+                    eval('localsettings.' + settingID + ' = document.getElementsByClassName("wmeDOTCamSettings")[i].value');
+                }
             }
             localStorage.setItem("Camera_Settings", JSON.stringify(localsettings));
         }
@@ -714,37 +860,45 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         FL: {
             data(res) {
-                return res.item2;
+                return res.data;
             },
             scheme(obj) {
                 return {
                     state: "FL",
-                    camType: 1,
-                    lon: obj.location[1],
-                    lat: obj.location[0],
-                    src: `https://fl511.com/map/Cctv/${obj.itemId}`,
-                    desc: ""
+                    camType: 0,
+                    lon: obj.longitude,
+                    lat: obj.latitude,
+                    src: obj.videoUrl,
+                    desc: obj.description2
                 };
             },
-            URL: ['https://fl511.com/map/mapIcons/Cameras']
+            URL: ['https://fl511.com/List/GetData/Cameras?query=%7B%22columns%22%3A%5B%7B%22data%22%3Anull%2C%22name%22%3A%22%22%7D%2C%7B%22name%22%3A%22sortId%22%2C%22s%22%3Atrue%7D%2C%7B%22name%22%3A%22region%22%2C%22s%22%3Atrue%7D%2C%7B%22name%22%3A%22county%22%2C%22s%22%3Atrue%7D%2C%7B%22name%22%3A%22roadway%22%2C%22s%22%3Atrue%7D%2C%7B%22data%22%3A5%2C%22name%22%3A%22description2%22%7D%2C%7B%22data%22%3A6%2C%22name%22%3A%22%22%7D%5D%2C%22order%22%3A%5B%7B%22column%22%3A1%2C%22dir%22%3A%22asc%22%7D%2C%7B%22column%22%3A2%2C%22dir%22%3A%22asc%22%7D%5D%2C%22start%22%3A0%2C%22length%22%3A5000%2C%22search%22%3A%7B%22value%22%3A%22%22%7D%7D&lang=en']
         },
         GA: {
             data(res) {
-                return res.features;
+                return res;
             },
             scheme(obj) {
                 /*if (obj.properties.HLS) {return {state: "GA",camType:0,lon:obj.geometry.coordinates[0],lat:obj.geometry.coordinates[1],src:obj.properties.HLS,desc:obj.properties.location_description,width:480,height:360}}
                                    else {}*/
+                let camURL, camType;
+                if (obj.VideoUrl != null) {
+                    camURL = obj.VideoUrl;
+                    camType = 0;
+                } else {
+                    camURL = obj.Url;
+                    camType = 1;
+                }
                 return {
                     state: "GA",
-                    camType: 1,
-                    lon: obj.geometry.coordinates[0],
-                    lat: obj.geometry.coordinates[1],
-                    src: obj.properties.url,
-                    desc: obj.properties.location_description
+                    camType: camType,
+                    lon: obj.Longitude,
+                    lat: obj.Latitude,
+                    src: camURL,
+                    desc: obj.Name
                 };
             },
-            URL: ['http://www.511ga.org/data/geopath/icons.cctv.geojson']
+            URL: ['http://40.121.218.107:8080/GACam']
         },
         HI: {
             x(res) {
@@ -753,7 +907,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             scheme(obj) {
                 return {
                     state: "HI",
-                    camType: 1,
+                    camType: 5,
                     lon: obj.Lon,
                     lat: obj.Lat,
                     src: obj.CameraImageURL.__text,
@@ -764,30 +918,30 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         IA: {
             data(res) {
-                return res;
+                return res.features;
             },
             scheme(obj) {
-                if (obj.views[0].type == "FLASH") { // IA only has RTMP streams currently
+                if (!obj.attributes.VideoURL) {
                     return {
                         state: "IA",
                         camType: 1,
-                        lon: obj.location.longitude,
-                        lat: obj.location.latitude,
-                        src: obj.views[0].videoPreviewUrl,
-                        desc: obj.name
+                        lon: obj.geometry.x,
+                        lat: obj.geometry.y,
+                        src: obj.attributes.ImageURL,
+                        desc: obj.attributes.ImageName
                     };
                 } else {
                     return {
                         state: "IA",
-                        camType: 1,
-                        lon: obj.location.longitude,
-                        lat: obj.location.latitude,
-                        src: obj.views[0].url,
-                        desc: obj.name
+                        camType: 0,
+                        lon: obj.geometry.x,
+                        lat: obj.geometry.y,
+                        src: obj.attributes.VideoURL,
+                        desc: obj.attributes.ImageName
                     };
                 }
             },
-            URL: ['https://hb.511ia.org/tgcameras/api/cameras']
+            URL: ['https://services.arcgis.com/8lRhdTsQyJpO52F1/arcgis/rest/services/Traffic_Cameras_View/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=ImageName%2C+ImageURL%2C+VideoURL&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=4326&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=none&f=pjson&token=']
         },
         ID: {
             data(res) {
@@ -823,19 +977,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         IN: {
             data(res) {
-                return res.features;
+                return res;
             },
             scheme(obj) {
                 return {
                     state: "IN",
                     camType: 1,
-                    lon: obj.geometry.coordinates[0],
-                    lat: obj.geometry.coordinates[1],
-                    src: `http://pws.trafficwise.org/${obj.properties.image}`,
-                    desc: obj.properties.description
+                    lon: obj.location.longitude,
+                    lat: obj.location.latitude,
+                    src: obj.views[0].url,
+                    desc: obj.name
                 };
             },
-            URL: ['http://pws.trafficwise.org/aries/cctv.json']
+            URL: ['https://indot.carsprogram.org/tgcameras/api/cameras?_=1631668084309']
         }, //non-HTTPS will flag mixed media erro},
         KS: {
             data(res) {
@@ -860,7 +1014,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             scheme(obj) {
                 return {
                     state: "KY",
-                    camType: 1,
+                    camType: 5,
                     lon: obj.attributes.longitude,
                     lat: obj.attributes.latitude,
                     src: obj.attributes.snapshot,
@@ -1019,19 +1173,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         NC: {
             data(res) {
-                return res.features;
+                return res;
             },
             scheme(obj) {
                 return {
                     state: "NC",
-                    camType: 1,
-                    lon: obj.attributes.Longitude,
-                    lat: obj.attributes.Latitude,
-                    src: obj.attributes.Link,
-                    desc: obj.attributes.Location
+                    camType: 4,
+                    lon: obj.longitude,
+                    lat: obj.latitude,
+                    src: obj.id,
+                    desc: ''
                 };
             },
-            URL: ['https://services.arcgis.com/NuWFvHYDMVmmxMeM/ArcGIS/rest/services/NCDOT_TIMSCameras/FeatureServer/0/query?where=Latitude+%3E+0&objectIds=&time=&geometry=&geometryType=esriGeometryPoint&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=none&f=pjson&token=']
+            URL: ['https://eapps.ncdot.gov/services/traffic-prod/v1/cameras/']
         },
         ND: {
             data(res) {
@@ -1047,7 +1201,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     desc: obj.properties.Cameras[0].Description
                 };
             },
-            URL: ['https://rehostjson.phuz.repl.co/NDCam']
+            URL: ['http://essentialintegrations.com/scripts/NDCam']
         },
         NE: {
             data(res) {
@@ -1206,15 +1360,32 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             scheme(obj) {
                 let online;
                 if (obj.title.includes("UNAVAILABLE")) { online = false; } else { online = true; }
-                return {
-                    state: "PA",
-                    enabled: online,
-                    camType: 2,
-                    lon: obj.start_lng,
-                    lat: obj.start_lat,
-                    src: obj.md5,
-                    desc: obj.title
-                };
+                if (obj.md5.substring(0, 3) == "ptc") {
+                    return {
+                        state: "PA",
+                        enabled: online,
+                        camType: 1,
+                        lon: obj.start_lng,
+                        lat: obj.start_lat,
+                        src: "https://websvc.paturnpike.com/webmap/1_devices/" + obj.md5.replace("ptc_camera_", "cam") + ".jpg",
+                        desc: obj.title
+                    };
+                } else {
+                    let extra = "";
+                    if (obj.description.includes("Traffic closest")) {
+                        extra = "<font size=2>" + obj.description.match(/div id="camDescription">(.*?)<\/div/)[1] + "</font>";
+                    }
+                    return {
+                        state: "PA",
+                        enabled: online,
+                        camType: 2,
+                        lon: obj.start_lng,
+                        lat: obj.start_lat,
+                        src: obj.md5,
+                        desc: obj.title,
+                        subtitle: extra
+                    };
+                }
             },
             URL: ['https://www.511pa.com/wsvc/gmap.asmx/buildCamerasJSONjs']
         },
@@ -1326,20 +1497,35 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         WI: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "WI",
                     camType: 1,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5]
+                    lon: obj.Longitude,
+                    lat: obj.Latitude,
+                    src: obj.Url,
+                    desc: obj.Name
                 };
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/8/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/WICam']
+        },
+        WV: {
+            data(res) {
+                return res.changes["com.orci.opentms.web.public511.components.camera.shared.data.CameraBean"].changes;
+            },
+            scheme(obj) {
+                return {
+                    state: "WV",
+                    camType: 0,
+                    lon: obj.entity.x,
+                    lat: obj.entity.y,
+                    src: obj.entity.realTimeMessageUrl,
+                    desc: obj.entity.description
+                };
+            },
+            URL: ['http://40.121.218.107:8080/WV']
         },
         WY: {
             data(res) {
@@ -1348,7 +1534,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             scheme(obj) {
                 let LonLat = new OpenLayers.LonLat([obj.geometry.x, obj.geometry.y]).transform('EPSG:3857', 'EPSG:4326')
                 console.log(obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0])
-                return { state: "WY", camType: 1, lon: LonLat.lon, lat: LonLat.lat, src: obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0], desc: obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*?(?=<\/i><br\/><a href)/)[0] }
+                return { state: "WY", camType: 5, lon: LonLat.lon, lat: LonLat.lat, src: obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0], desc: obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*?(?=<\/i><br\/><a href)/)[0] }
             },
             URL: ['https://map.wyoroad.info/wtimap/data/wtimap-webcameras.json']
         }
