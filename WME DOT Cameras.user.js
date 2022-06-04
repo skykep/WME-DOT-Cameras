@@ -612,20 +612,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         AZ: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "AZ",
                     camType: 1,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5]
+                    lon: obj.Longitude,
+                    lat: obj.Latitude,
+                    src: obj.Url,
+                    desc: obj.Description
                 };
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/18/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/AZCam']
         },
         CA: {
             data(res) {
