@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.51
+// @version      1.52
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -183,8 +183,10 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         WazeWrap.Interface.ShowScriptUpdate("WME DOT Cameras", GM_info.script.version, updateMessage, "https://greasyfork.org/en/scripts/407690-wme-dot-cameras", "https://www.waze.com/forum/viewtopic.php?f=819&t=304760");
         getBounds();
         W.map.events.register("moveend", W.map, function () {
-            getBounds();
-            redrawCams();
+            if (localsettings.enabled) {
+                getBounds();
+                redrawCams();
+            }
         });
         $('#chkHideZoomOut').change(function () {
             redrawCams();
@@ -618,6 +620,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             settings[settingName] = this.checked;
             saveSettings();
         });
+        setEnabled(localsettings.enabled)
     }
     //Set Checkbox from Settings
     function setChecked(checkboxId, checked) {
