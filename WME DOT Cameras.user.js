@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.49
+// @version      1.51
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -78,10 +78,10 @@
 
 let ALLayer, AKLayer, AZLayer, ARLayer, CALayer, COLayer, CTLayer, DELayer, DCLayer, FLLayer, GALayer, HILayer, IDLayer, ILLayer, INLayer, IALayer, KSLayer, KYLayer, LALayer, MELayer, MDLayer, MALayer, MILayer, MNLayer, MSLayer, MOLayer, MTLayer, NELayer, NVLayer, NHLayer, NJLayer, NMLayer, NYLayer, NWLayer, NCLayer, NDLayer, OHLayer, OKLayer, ORLayer, PALayer, RILayer, SCLayer, SDLayer, TNLayer, TXLayer, UTLayer, VTLayer, VALayer, WALayer, WILayer, WVLayer, WYLayer;
 let ALFeed = [], AKFeed = [], AZFeed = [], ARFeed = [], CAFeed = [], COFeed = [], CTFeed = [], DEFeed = [], DCFeed = [], FLFeed = [], GAFeed = [], HIFeed = [], IDFeed = [], ILFeed = [], INFeed = [], IAFeed = [], KSFeed = [], KYFeed = [], LAFeed = [], MEFeed = [], MDFeed = [], MAFeed = [], MIFeed = [], MNFeed = [], MSFeed = [], MOFeed = [], MTFeed = [], NEFeed = [], NVFeed = [], NHFeed = [], NJFeed = [], NMFeed = [], NYFeed = [], NWFeed = [], NCFeed = [], NDFeed = [], OHFeed = [], OKFeed = [], ORFeed = [], PAFeed = [], RIFeed = [], SCFeed = [], SDFeed = [], TNFeed = [], TXFeed = [], UTFeed = [], VTFeed = [], VAFeed = [], WAFeed = [], WIFeed = [], WVFeed = [], WYFeed;
-var settings, video, player, hls, staticUpdateID, newZIndex;
+var localsettings, settings, video, player, hls, staticUpdateID, newZIndex;
 var state, stateLength, settingID, cameraKeys = [];
 let mapBounds;
-const updateMessage = "&#9658; Fixed MD";
+const updateMessage = "&#9658; Added Toggle to Tab";
 const x2js = new X2JS();
 const camIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAGXcA1uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpBRDNGNTkwRTYzQThFMzExQTc4MDhDNjAwODdEMzdEQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo2OUI0RUEyN0IwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2OUI0RUEyNkIwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1LjEgV2luZG93cyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjZGOEJBMzExNkZCMEUzMTFCOEY5QTU3QUQxM0M2MjI5IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkFEM0Y1OTBFNjNBOEUzMTFBNzgwOEM2MDA4N0QzN0RBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+TV0cjwAABbhJREFUeNpiYIAAXiZGCIMPiP//f8DwnwnI+PT/HZD8y8AAEEBQVQzTwOSfuwz/u6qAyh4y/Gf8f4/hPwMnUJSZgQEggMCyzpZAmbsILMTHcAokPhPEWT8dqJoBgvetAtMMDBIiDCf/P4bqeMXwf+t8BiOAAGJAAqVA7A1iPH/+goFBT4OB8f9LJDueAzFQgOHGLoTZYEGgpJgww0+G/68ZQArAEsryEHpRN5BuK4FIcHMhjJORVTvBYG3MwPD2CkKwKAVI/3nBABBAYOcY6zKAjGSQEmP4cGkXxMlgK4BeaCll+B/lzzDh/yegmr8vIO4HGv/l/0eG/w4WDP9fnUM4Dhl/uMzwf/6CFQ4g9RUgE3ctRvgGGSvJMfw/tw3i7sY8hv8sQMGrQE8yuFoBZe8CeRwMDIKaDAyWRgwM2xYD+exA/AuIvwAV3kaE6sSPQCuBHv2vqczwf0YL0MR7SE4CsgsTGP5///aSCZQSGDRVGPJfv2dgNDNkcP30heHbB6BpyzYyMCRVMjCwqDIcOX+LgTEtioGRhfn/P4AAbJTfK0NhGMe/Z+ecpVkrScnIlCiWkoulpFyhxgXKXCGK3XGBG/4BJcoNN665tqsxo6XshiKtyQybn82vMZPF63nPOXKYi+fieU7P8z59P9/n6NlBVNrRRDFPMUlRIGhmM0gWzk5NSCFMuDE2MqAaUJGUhDgOgNmKkXmLwMRudA11diynI9lSKhEHG+oBu9q1mHkDf9AWWkM0dgHEb4H+PqqkKD51uxpJuSoDHpIfAowyohyUveJH+9pqUjigav/9UnIfzO/frkRvBxUuwcpK/gc3PkzfzynuwRoanYuStZDKaeAkwA8QEPJ/CYfpBUCmqxp1E7uXJ6u0tUNVQbvIR+DIBzgHgQMvrZ5LZWIiSuowh6N+nQ9ZYgnNcLTzdRBsz5Ot1socWCr1KipYulrJVDIQjqjwgqsESvcPQB5QWmP2nsWem5X80IeizhaadPfHQwTxnXJTDk5ZQgeOOCC0ScY0wtPdRrc4AzY7BVZuQ8bVDhcXJLyhNnwJUFj5hTQVhmH8mQ7H5nYYkRxJw8hqBWYsLIr+gisKYobdjKguClOKLiQvgrrwqogiIr1wECHdRCCjIopNiCKZIGkthysrrWSklg36M6O5fT3fzmk7C8kDL4zt2/neP8/ze01/b6XuceWsVmAJJR56gurObjSn0/DWrEY152SmIyFBNk1sxZhBZAQTyVmEDjeiy9eAQdm4FK1gLlHg8Y3CYlXzZW12A1+GYd1Yi1u1LogXQSYgmxdnjM8jsTFNZvLMxADE3h0QS8vxNNqLJWKa2ZMXBRXwaaNmL/XdoUct+hhtjF+MFBZ+zJq5Gw6ywoRyI/xs/JjJtCj38+XWo3rGdM6pI3nlqYshmmiGx7fJpLE8rAqGZQy+49o5CNeauoeplJZZPbWfztqSWurvmV/ixrCXQjRSFQE/xI8R/dK44VJae99OorWt/Xh2tZxp0Q+903zynX/q6YLwevgy28IXyiBYxCY3cXYeIvGGRL0Isc697Z5k0NRMQj8Grd92zuDALuAuIRm8CVSohe1uYZ+T74FwADjdBFBh6GgH+mm3ZuLDSb9Ocg9YLNYZOeSyUitevupFeWWVTlzjQ0dNfQJW1fOybulPWlmyZ85wpshQC43/m+9YsR2ZTn9wg5z955+z2FO3H0PRIIqcHHzgPpAgNukwOJzAwCB3NiFQxsyyjJ37J4lMXklpfnaRyidaO3xe7+6h3JmVy2CjkcInD3EO3/T1xsFn3mobX0z+RzkfNAxcpXrIjo+RkFKp0VLkk1hfwwqJr69RODxbcH05gem/wIEN62TV13XuMxNIvqYYqCT6R6x14UHsEarkwhBxJbtnC4wmS9fXDuT2stFkxIDsp4tfbZU5MCr0jnMbIMLoKy7Gc8WunU3rxHMoCmKxUaiqij/5alOWhMPoGAAAAABJRU5ErkJggg==';
 const camRed = 'data:image/gif;base64,R0lGODlhGAAYAOYAAAsKABAOAA4MAHI0DmsxDWItDEkiCWcwDVcoC04kCkghCUYgCXw5EF0rDFIlCjcYB4M7ET0bCI5AE4c9EqNFFp5EFZtEFahHF6pIGK1HGK9IGblKG7hIG7NHGiUPBsBJHcJJHsJKHiUOBshIH8ZIH8ZJH81HIcxHIctHIc5FIs5GItFDI8Y/IdNCJNJDJM1AI8xAI8lAIsc/IsM/IcI+Ib48IL49IL08ILs6ILs7IM9BJLc5INQ/Jc4/JLk5ILc4ILY4ILU2ILU3ILM1INU+JrQ0ILM0INY8J7IyILI0ILExINY7J9c5KNY5KNc2KRIEA9c1Kdc0KtcxKxEDA9cuK9csLNctLNcuLAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFkALAAAAAAYABgAAAfZgFmCg4SFhoeGQTc1P4iOOUxVkpNQNI6ETZOak1KXWZugkzuIoaVVSIZOVSsDJVamk4U5khRYWA8WLbAyhKpVCLa2Uw0bUaWEkkRTwcweEyagSoJCkisLy8zBUwoYR5MdgjWaJxAi2cxPByFVJII2oCnMUwbYUxouVSOCP6A8EcIVqvC4gODDJA6DQjkJkICBqSKDpICiIoAILEI0JgJYYqpHIUkoQIxQkWEKFFOGjFSRQKCBgwIgTOE45OMKrEksHCW5WSWHpywxSun4SWjIDBgvWAAhytRQIAA7';
@@ -106,7 +106,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     }
     //Build the Tab and Settings Division
     function init() {
-        var $section = $("<div>");
+        var $section = $("<div id=WMEDOTCameraPanel>");
         $section.html([
             '<div id="chkCameraEnables">',
             '<a href="https://www.waze.com/forum/viewtopic.php?f=819&t=304760" target="_blank">WME DOT Cameras</a> v' + GM_info.script.version + '<br>',
@@ -192,6 +192,18 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         $('#valueHideZoomLevel').change(function () {
             redrawCams();
         })
+    }
+    function setEnabled(value) {
+        settings.enabled = value;
+        saveSettings();
+        const color = value ? '#00bd00' : '#ccc';
+        $('span#dot-cameras-power-btn').css({ color });
+        for (var i = 0; i < stateLength; i++) {
+            state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
+            if (W.map.getLayersByName(state + 'Layer').length != "0") {
+                eval(state + 'Layer.setVisibility(' + value + ')');
+            }
+        }
     }
     function getBounds() {
         mapBounds = W.map.getExtent();
@@ -437,26 +449,34 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 if (currentCamURL.includes("njtpk-wink")) {
                     id = 1;
                 } else { id = 2; }
-                getFeed('https://511nj.org/api/client/camera/getHlsToken?Id=' + id, 'json', "", function (res) {
-                    currentCamURL = currentCamURL + "?otp=" + JSON.parse(res).Data.Token;
-                    setTimeout(function () {
-                        video = document.getElementById('hlsVideo');
-                        var videoSrc = currentCamURL;
-                        if (hls) { hls.destroy(); }
-                        if (Hls.isSupported()) {
-                            hls = new Hls({
-                                xhrSetup: xhr => {
-                                  xhr.setRequestHeader('If-None-Since', "Wed, 06 Jul 2022 00:31:33 GMT")
-                                  xhr.setRequestHeader('If-None-Match', "228d1d4629c1f1e35e68d5cbb30d147802afad4e85c32ce52760a59a6937a8a9")
-                                }
-                              });
-                            hls.loadSource(videoSrc);
-                            hls.attachMedia(video);
-                            hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                                video.play();
-                            });
-                        }
-                    }, 1000);
+                var token;
+                getFeed('https://www.njta.com/api/video', 'xml', "", function (res) {
+                    token = res.replace(/["]/g, "");
+
+
+                    getFeed('https://publicmap1.511nj.org/api/client/camera/getHlsToken?Id=' + id, 'json', "", function (res) {
+                        currentCamURL = currentCamURL + "?otp=" + token; //JSON.parse(res).Data.Token;
+
+                        setTimeout(function () {
+                            video = document.getElementById('hlsVideo');
+                            var videoSrc = currentCamURL;
+                            if (hls) { hls.destroy(); }
+                            if (Hls.isSupported()) {
+                                hls = new Hls({
+                                    xhrSetup: xhr => {
+                                        xhr.setRequestHeader('If-None-Since', "Wed, 06 Jul 2022 00:31:33 GMT")
+                                        xhr.setRequestHeader('If-None-Match', "228d1d4629c1f1e35e68d5cbb30d147802afad4e85c32ce52760a59a6937a8a9")
+                                        xhr.setRequestHeader('access-control-allow-origin', '*')
+                                    }
+                                });
+                                hls.loadSource(videoSrc);
+                                hls.attachMedia(video);
+                                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                                    video.play();
+                                });
+                            }
+                        }, 1000);
+                    });
                 });
                 break;
             case 4:
@@ -605,19 +625,30 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     }
     //Load Saved Settings
     function loadSettings() {
-        var loadedSettings = $.parseJSON(localStorage.getItem("Camera_Settings"));
+        localsettings = $.parseJSON(localStorage.getItem("Camera_Settings"));
         var defaultSettings = { Enabled: false, };
-        settings = loadedSettings ? loadedSettings : defaultSettings;
+        settings = localsettings ? localsettings : defaultSettings;
         for (var prop in defaultSettings) {
             if (!settings.hasOwnProperty(prop)) {
                 settings[prop] = defaultSettings[prop];
             }
         }
+        const color = localsettings.enabled ? '#00bd00' : '#ccc';
+        $('a[href="#sidepanel-dotcameras"]').prepend(
+            $('<span>', {
+                class: 'fa fa-power-off',
+                id: 'dot-cameras-power-btn',
+                style: `margin-right: 5px;cursor: pointer;color: ${color};font-size: 13px;`,
+                title: 'Toggle DOT Cameras'
+            }).click(evt => {
+                evt.stopPropagation();
+                setEnabled(!localsettings.enabled);
+            })
+        );
     }
     //Save Tab Settings
     function saveSettings() {
         if (localStorage) {
-            var localsettings = {};
             for (var i = 0; i < stateLength; i++) {
                 state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
                 eval('localsettings.' + state + 'CamEnabled = document.getElementsByClassName("wmeDOTCamCheckbox")[i].checked');
@@ -1251,7 +1282,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     height: 360
                 };
             },
-            URL: ['https://511nj.org/api/client/camera/GetCameraDataByTourId?tourid=&rnd=202007201015']
+            URL: ['https://publicmap1.511nj.org/api/client/camera/GetCameraDataByTourId?tourid=&rnd=202007201015']
         },
         NM: {
             data(res) {
