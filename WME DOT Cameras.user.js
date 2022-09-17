@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.55
+// @version      1.56
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -57,6 +57,7 @@
 // @connect      ca.gov
 // @connect      txdot.gov
 // @connect      modttraffic.om
+// @connect      nd.gov
 // @connect      cttravelsmart.org
 // @connect      vaisala.com
 // @connect      skyvdn.com
@@ -67,7 +68,7 @@
 // @connect      carsprogram.org
 // @connect      ksdot.org
 // @connect      40.121.218.107
-// @connect      sc.cdn.iteris-atis.com
+// @connect      iteris-atis.com
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -84,7 +85,7 @@ let ALFeed = [], AKFeed = [], AZFeed = [], ARFeed = [], CAFeed = [], COFeed = []
 var localsettings = {}, settings, video, player, hls, staticUpdateID, newZIndex;
 var state, stateLength, settingID, cameraKeys = [];
 let mapBounds;
-const updateMessage = "&#9658; Hide map icons at zoom less than 12";
+const updateMessage = "&#9658; New relay server, updated sources for many states, video provided for more.";
 const x2js = new X2JS();
 const camIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAGXcA1uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpBRDNGNTkwRTYzQThFMzExQTc4MDhDNjAwODdEMzdEQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo2OUI0RUEyN0IwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2OUI0RUEyNkIwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1LjEgV2luZG93cyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjZGOEJBMzExNkZCMEUzMTFCOEY5QTU3QUQxM0M2MjI5IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkFEM0Y1OTBFNjNBOEUzMTFBNzgwOEM2MDA4N0QzN0RBIi8+IDwvcmRmOkRlc2NyaXB0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';
 const camRed = 'data:image/gif;base64,R0lGODlhGAAYAOYAAAsKABAOAA4MAHI0DmsxDWItDEkiCWcwDVcoC04kCkghCUYgCXw5EF0rDFIlCjcYB4M7ET0bCI5AE4c9EqNFFp5EFZtEFahHF6pIGK1HGK9IGblKG7hIG7NHGiUPBsBJHcJJHsJKHiUOBshIH8ZIH8ZJH81HIcxHIctHIc5FIs5GItFDI8Y/IdNCJNJDJM1AI8xAI8lAIsc/IsM/IcI+Ib48IL49IL08ILs6ILs7IM9BJLc5INQ/Jc4/JLk5ILc4ILY4ILU2ILU3ILM1INU+JrQ0ILM0INY8J7IyILI0ILExINY7J9c5KNY5KNc2KRIEA9c1Kdc0KtcxKxEDA9cuK9csLNctLNcuLAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFkALAAAAAAYABgAAAfZgFmCg4SFhoeGQTc1P4iOOUxVkpNQNI6ETZOak1KXWZugkzuIoaVVSIZOVSsDJVamk4U5khRYWA8WLbAyhKpVCLa2Uw0bUaWEkkRTwcweEyagSoJCkisLy8zBUwoYR5MdgjWaJxAi2cxPByFVJII2oCnMUwbYUxouVSOCP6A8EcIVqvC4gODDJA6DQjkJkICBqSKDpICiIoAILEI0JgJYYqpHIUkoQIxQkWEKFFOGjFSRQKCBgwIgTOE45OMKrEksHCW5WSWHpywxSun4SWjIDBgvWAAhytRQIAA7';
@@ -160,7 +161,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<tr><td align=center><input type="checkbox" id="chkNCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NC</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkNDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>ND</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkNECamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NE</td></tr>',
-            '<tr><td align=center><input type="checkbox" id="chkNWCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>New England</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkNWCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>New England (NH, VT, ME)</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkNJCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NJ</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkNMCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NM</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkNVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>NV</td></tr>',
@@ -178,7 +179,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<tr><td align=center><input type="checkbox" id="chkVACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>VA</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkWACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WA</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkWICamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WI</td></tr>',
-            '<tr><td align=center><input type="checkbox" id="chkWVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WV (waiting for SSL)</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkWVCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WV</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkWYCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WY</td></tr>',
             '</table>',
             '</div>'
@@ -194,10 +195,10 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         });
         $('#chkHideZoomOut').change(function () {
             redrawCams();
-        })
+        });
         $('#valueHideZoomLevel').change(function () {
             redrawCams();
-        })
+        });
     }
     function setEnabled(value) {
         settings.enabled = value;
@@ -217,7 +218,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     }
     getFeed("http://40.121.218.107:8080/CSS", "css", "", function (result) {
         GM_addStyle(result);
-    })
+    });
     //Build the State Layers
     function buildDOTCamLayers(state) {
         eval(state.substring(0, 2) + 'Layer = new OpenLayers.Layer.Markers("' + state.substring(0, 2) + 'Layer")');
@@ -411,7 +412,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 $("body").append(popupHTML[1]);
                 staticUpdateID = setInterval(function () {
                     var camImage = document.getElementById('staticimage');
-                    if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}` }
+                    if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}`; }
                     else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
                 }, 5000);
                 break;
@@ -476,9 +477,9 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                             if (Hls.isSupported()) {
                                 hls = new Hls({
                                     xhrSetup: xhr => {
-                                        xhr.setRequestHeader('If-None-Since', "Wed, 06 Jul 2022 00:31:33 GMT")
-                                        xhr.setRequestHeader('If-None-Match', "228d1d4629c1f1e35e68d5cbb30d147802afad4e85c32ce52760a59a6937a8a9")
-                                        xhr.setRequestHeader('access-control-allow-origin', '*')
+                                        xhr.setRequestHeader('If-None-Since', "Wed, 06 Jul 2022 00:31:33 GMT");
+                                        xhr.setRequestHeader('If-None-Match', "228d1d4629c1f1e35e68d5cbb30d147802afad4e85c32ce52760a59a6937a8a9");
+                                        xhr.setRequestHeader('access-control-allow-origin', '*');
                                     }
                                 });
                                 hls.loadSource(videoSrc);
@@ -499,7 +500,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     document.getElementById("titleNC").innerHTML = titleNC;
                     staticUpdateID = setInterval(function () {
                         var camImage = document.getElementById('staticimage');
-                        if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}` }
+                        if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}`; }
                         else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
                     }, 100);
                 });
@@ -508,7 +509,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 $("body").append(popupHTML[5]);
                 staticUpdateID = setInterval(function () {
                     var camImage = document.getElementById('staticimage');
-                    if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}` }
+                    if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}`; }
                     else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
                 }, 5000);
                 break;
@@ -600,17 +601,12 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         //Build the layers for the selected states
         for (var i = 0; i < stateLength; i++) {
             state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
-            if (document.getElementById('chk' + state + 'CamEnabled').checked) { buildDOTCamLayers(state); eval('getCam(config.' + state + ')') }
+            if (document.getElementById('chk' + state + 'CamEnabled').checked) { buildDOTCamLayers(state); eval('getCam(config.' + state + ')'); }
         }
-        //document.getElementById('chkKSCamEnabled').disabled = true; // changed their feeds; we're working on it
-        document.getElementById('chkMSCamEnabled').disabled = true; // ??
-        document.getElementById('chkMTCamEnabled').disabled = true; // parser written but better feed would help
-        document.getElementById('chkOKCamEnabled').disabled = true; // parser pending, would prefer better source
-        document.getElementById('chkSDCamEnabled').disabled = true; // parser pending, need a good source
+        document.getElementById('chkFLCamEnabled').disabled = true; // need to figure out tokens
+        document.getElementById('chkARCamEnabled').disabled = true; // need to figure out tokens
         document.getElementById('chkTXCamEnabled').disabled = true; // not working
-        //document.getElementById('chkWVCamEnabled').disabled = true; // still using http
-        //document.getElementById('chkHICamEnabled').disabled = true; // still using http
-        //document.getElementById('chkKYCamEnabled').disabled = true; // still using http
+        
 
         //Add Handler for Checkbox Setting Changes
         $('.wmeDOTCamCheckbox').change(function () {
@@ -758,20 +754,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
     const config = {
         AK: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "AK",
                     camType: 1,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5]
+                    lon: obj.Longitude,
+                    lat: obj.Latitude,
+                    src: obj.Url,
+                    desc: obj.Name
                 };
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/4/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/AKCam']
         },
         AL: {
             data(res) {
@@ -802,19 +797,18 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return res.feed.entry;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "AR",
                     camType: 0,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5],
+                    lon: obj.lon,
+                    lat: obj.lat,
+                    src: obj.src,
+                    desc: obj.desc,
                     width: 480,
                     height: 360
                 };
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/12/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/ARCam']
         },
         AZ: {
             data(res) {
@@ -848,57 +842,65 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             },
             URL: ['http://cwwp2.dot.ca.gov/data/d1/cctv/cctvStatusD01.json', 'http://cwwp2.dot.ca.gov/data/d2/cctv/cctvStatusD02.json', 'http://cwwp2.dot.ca.gov/data/d3/cctv/cctvStatusD03.json', 'http://cwwp2.dot.ca.gov/data/d4/cctv/cctvStatusD04.json', 'http://cwwp2.dot.ca.gov/data/d5/cctv/cctvStatusD05.json', 'http://cwwp2.dot.ca.gov/data/d6/cctv/cctvStatusD06.json', 'http://cwwp2.dot.ca.gov/data/d7/cctv/cctvStatusD07.json', 'http://cwwp2.dot.ca.gov/data/d8/cctv/cctvStatusD08.json', 'http://cwwp2.dot.ca.gov/data/d9/cctv/cctvStatusD09.json', 'http://cwwp2.dot.ca.gov/data/d10/cctv/cctvStatusD10.json', 'http://cwwp2.dot.ca.gov/data/d11/cctv/cctvStatusD11.json', 'http://cwwp2.dot.ca.gov/data/d12/cctv/cctvStatusD12.json']
         },
-        CO: { // CO has a streaming camera feed as well, but will require a GET request to get the token and undetermined if it will play even after receiving (didn't work with VLC)
+        CO: {
             data(res) {
-                return res.CameraDetails.Camera;
+                return res;
             },
             scheme(obj) {
-                return {
+                if (obj.streamUrl !== null) {
+                    return {
+                        state: "CO",
+                        camType: 0,
+                        lon: obj.features[0].geometry.coordinates[0],
+                        lat: obj.features[0].geometry.coordinates[1],
+                        src: obj.streamUrl[0].src,
+                        desc: obj.tooltip
+                    };}
+                else {
+                    return {
                     state: "CO",
                     camType: 1,
-                    lon: obj.Location.Longitude,
-                    lat: obj.Location.Latitude,
-                    src: `https://i.cotrip.org/${obj.CameraView[0].ImageLocation}`,
-                    desc: obj.Description
-                };
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
+                    src: obj.views[0].url,
+                    desc: obj.tooltip
+                    };}
             },
-            URL: ['https://www.cotrip.org/camera/getStillCameras.do']
+            URL: ['http://40.121.218.107:8080/COCam']
         },
         CT: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "CT",
                     camType: 1,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5]
+                    lon: obj.location[1],
+                    lat: obj.location[0],
+                    src: `https://cttravelsmart.org/map/Cctv/${obj.itemId}` ,
+                    desc: null
                 };
             },
-            URL: ["https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/14/public/full?alt=json"]
+            URL: ["http://40.121.218.107:8080/CTCam"]
         },
         DC: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "DC",
                     camType: 0,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5],
+                    lon: obj.lng,
+                    lat: obj.lat,
+                    src: 'https://' + obj.host.match(".*(?=\:1935)") + '/rtplive/' + obj.stream + "/playlist.m3u8",
+                    desc: obj.title,
                     width: 480,
                     height: 360
                 };
             },
-            URL: ["https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/23/public/full?alt=json"]
+            URL: ["http://40.121.218.107:8080/DCCam"]
         },
         DE: {
             data(res) {
@@ -961,20 +963,29 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             URL: ['http://40.121.218.107:8080/GACam']
         },
         HI: {
-            x(res) {
-                return res.ArrayOfCamera.Camera;
+            data(res) {
+                return res
             },
             scheme(obj) {
+                if (obj.images.length == 4) {
                 return {
                     state: "HI",
-                    camType: 5,
-                    lon: obj.Lon,
-                    lat: obj.Lat,
-                    src: obj.CameraImageURL.__text,
-                    desc: obj.Description
-                };
+                    camType: 0,
+                    lon: obj.location.coordinates.longitude,
+                    lat: obj.location.coordinates.latitude,
+                    src: obj.images[3].URL,
+                    desc: obj.description
+                } }
+                else {
+                    return { state: "HI",
+                    camType: 1,
+                    lon: obj.location.coordinates.longitude,
+                    lat: obj.location.coordinates.latitude,
+                    src: obj.images[0].URL,
+                    desc: obj.description
+                     }}
             },
-            URL: ['http://goakamai.org/services/MapServiceProxy.asmx/GetFullCameraList']
+            URL: ['http://40.121.218.107:8080/HICam']
         },
         IA: {
             data(res) {
@@ -1011,13 +1022,13 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return {
                     state: "ID",
                     camType: 1,
-                    lon: obj.location.longitude,
-                    lat: obj.location.latitude,
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
                     src: obj.views[0].url,
-                    desc: `${obj.name} ${obj.location.cityReference}`
+                    desc: obj.tooltip
                 };
             },
-            URL: ['https://hb.511.idaho.gov/tgcameras/api/cameras']
+            URL: ['http://40.121.218.107:8080/IDCam']
         },
         IL: {
             data(res) {
@@ -1043,29 +1054,29 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return {
                     state: "IN",
                     camType: 1,
-                    lon: obj.location.longitude,
-                    lat: obj.location.latitude,
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
                     src: obj.views[0].url,
-                    desc: obj.name
+                    desc: obj.tooltip
                 };
             },
-            URL: ['https://indot.carsprogram.org/tgcameras/api/cameras?_=1631668084309']
-        }, //non-HTTPS will flag mixed media erro},
+            URL: ['http://40.121.218.107:8080/INCam']
+        },
         KS: {
             data(res) {
-                return res.features;
+                return res;
             },
             scheme(obj) {
                 return {
                     state: "KS",
                     camType: 1,
-                    lon: obj.attributes.lon,
-                    lat: obj.attributes.lat,
-                    src: `http://www.kandrive.org/cameras/${obj.attributes.url}`,
-                    desc: obj.attributes.location
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
+                    src: obj.views[0].url,
+                    desc: obj.tooltip
                 };
             },
-            URL: ['https://wfs.ksdot.org/arcgis_web_adaptor/rest/services/TravelInfo/Devices/MapServer/0/query?where=oid+%3E+0&text=&objectIds=&time=&geometry=&geometryType=esriGeometryPoint&inSR=&spatialRel=esriSpatialRelIntersects&relationParam=&outFields=*&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&having=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&historicMoment=&returnDistinctValues=false&resultOffset=&resultRecordCount=&queryByDistance=&returnExtentOnly=false&datumTransformation=&parameterValues=&rangeValues=&quantizationParameters=&f=pjson']
+            URL: ["http://40.121.218.107:8080/KSCam"]
         },
         KY: {
             data(res) {
@@ -1085,50 +1096,48 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         LA: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
-                if (cam[6] == "0") {
+                if (obj.VideoUrl == null) {
                     return {
                         state: "LA",
-                        camType: 0,
-                        lon: cam[2],
-                        lat: cam[3],
-                        src: cam[4],
-                        desc: cam[5],
+                        camType: 1,
+                        lon: obj.Longitude,
+                        lat: obj.Latitude,
+                        src: obj.Url,
+                        desc: obj.Description,
                         width: 480,
                         height: 360
                     };
                 } else {
                     return {
                         state: "LA",
-                        camType: 1,
-                        lon: cam[2],
-                        lat: cam[3],
-                        src: cam[4],
-                        desc: cam[5]
+                        camType: 0,
+                        lon: obj.Longitude,
+                        lat: obj.Latitude,
+                        src: obj.VideoUrl,
+                        desc: obj.Description
                     };
                 }
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/20/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/LACam']
         },
         MA: {
             data(res) {
-                return res.item2;
+                return res;
             },
             scheme(obj) {
                 return {
                     state: "MA",
                     camType: 1,
-                    enabled: true,
-                    lon: obj.location[1],
-                    lat: obj.location[0],
-                    src: `https://mass511.com/map/Cctv/${obj.itemId}`,
-                    desc: ""
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
+                    src: obj.views[0].url,
+                    desc: obj.tooltip
                 };
             },
-            URL: ['https://mass511.com/map/mapIcons/Cameras']
+            URL: ['http://40.121.218.107:8080/MACam']
         },
         MD: {
             data(res) {
@@ -1169,29 +1178,26 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return res;
             },
             scheme(obj) {
-                if (obj.views[0].type == "WMP") {
+                if (obj.streamUrl !== null) {
                     return {
                         state: "MN",
                         camType: 0,
-                        lon: obj.location.longitude,
-                        lat: obj.location.latitude,
-                        src: obj.views[0].url,
-                        desc: `${obj.location.routeId} - ${obj.location.cityReference}`,
-                        width: 480,
-                        height: 360
-                    };
-                } else {
+                        lon: obj.features[0].geometry.coordinates[0],
+                        lat: obj.features[0].geometry.coordinates[1],
+                        src: obj.streamUrl,
+                        desc: obj.tooltip
+                    };}
+                else {
                     return {
-                        state: "MN",
-                        camType: 1,
-                        lon: obj.location.longitude,
-                        lat: obj.location.latitude,
-                        src: obj.views[0].url,
-                        desc: `${obj.location.routeId} - ${obj.location.cityReference}`
-                    };
-                }
+                    state: "MN",
+                    camType: 1,
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
+                    src: obj.views[0].url,
+                    desc: obj.tooltip
+                    };}
             },
-            URL: ['https://hb.511mn.org/tgcameras/api/cameras']
+            URL: ['http://40.121.218.107:8080/MNCam']
         },
         MO: {
             data(res) {
@@ -1211,25 +1217,37 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         MS: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
                 return {
                     state: "MS",
                     camType: 0,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5],
+                    lon: obj.lon,
+                    lat: obj.lat,
+                    src: obj.StreamURL,
+                    desc: obj.tooltip,
                     width: 480,
                     height: 360
                 };
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/16/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/MSCam']
         },
         MT: {
-            URL: ['http://roadreport.mdt.mt.gov/map/getRWISMarkers.php']
+            data(res) {
+                return res.features;
+            },
+            scheme(obj) {
+                return {
+                    state: "MT",
+                    camType: 1,
+                    lon: obj.geometry.coordinates[0],
+                    lat: obj.geometry.coordinates[1],
+                    src: obj.properties.cameras[0].image,
+                    desc: obj.properties.description
+                };
+            },
+            URL: ['https://mt.cdn.iteris-atis.com/geojson/icons/metadata/icons.cameras.geojson', "https://mt.cdn.iteris-atis.com/geojson/icons/metadata/icons.rwis.geojson"]
         },
         NC: {
             data(res) {
@@ -1261,7 +1279,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     desc: obj.properties.Cameras[0].Description
                 };
             },
-            URL: ['http://essentialintegrations.com/scripts/NDCam']
+            URL: ['https://travelfiles.dot.nd.gov/geojson/cameras/1654870342843/cameras.json']
         },
         NE: {
             data(res) {
@@ -1271,13 +1289,15 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return {
                     state: "NE",
                     camType: 1,
-                    lon: obj.location.longitude,
-                    lat: obj.location.latitude,
-                    src: obj.views[0].url,
-                    description: obj.name
+                    lon: obj.features[0].geometry.coordinates[0],
+                    lat: obj.features[0].geometry.coordinates[1],
+                    src: obj.Url,
+                    desc: obj.tooltip,
+                    width: 480,
+                    height: 360
                 };
             },
-            URL: ['https://hb.511.nebraska.gov/tgcameras/api/cameras']
+            URL: ['http://40.121.218.107:8080/NECam']
         },
         NJ: {
             data(res) {
@@ -1353,33 +1373,49 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         NY: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
-                if (cam[6] == "0") {
+                if (obj.VideoUrl == null) {
                     return {
                         state: "NY",
-                        camType: 0,
-                        lon: cam[2],
-                        lat: cam[3],
-                        src: cam[4],
-                        desc: cam[5],
+                        camType: 1,
+                        lon: obj.Longitude,
+                        lat: obj.Latitude,
+                        src: obj.Url,
+                        desc: obj.Name,
                         width: 480,
                         height: 360
                     };
                 } else {
                     return {
                         state: "NY",
-                        camType: 1,
-                        lon: cam[2],
-                        lat: cam[3],
-                        src: cam[4],
-                        desc: cam[5]
+                        camType: 0,
+                        lon: obj.Longitude,
+                        lat: obj.Latitude,
+                        src: obj.VideoUrl,
+                        desc: obj.Name
                     };
                 }
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/6/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/NYCam']
+        },
+        OK: {
+            data(res) {
+                return res;
+            },
+            scheme(obj) {
+                if (obj.mapCameras.length > 0) {
+                  return {
+                    state: "OK",
+                    camType: 0,
+                    lon: obj.mapCameras[0].longitude,
+                    lat: obj.mapCameras[0].latitude,
+                    src: obj.mapCameras[0].streamDictionary.streamSrc,
+                    desc: obj.name
+                  };}
+            },
+           URL: ["http://40.121.218.107:8080/OKCam"]
         },
         OH: {
             data(res) {
@@ -1463,7 +1499,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     desc: obj.attributes.Description
                 };
             },
-            URL: ['https://vueworks.dot.ri.gov/arcgis/rest/services/VUEWorks_V10_2/MapServer/24/query?where=OBJECTID+%3E+0&text=&objectIds=&time=&geometry=&geometryType=esriGeometryPoint&inSR=&spatialRel=esriSpatialRelIntersects&relationParam=&outFields=*&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&returnDistinctValues=false&resultOffset=&resultRecordCount=&f=pjson']
+            URL: ['https://vueworks.dot.ri.gov/arcgis/rest/services/VW_ITSAssets105/MapServer/2/query?where=OBJECTID+%3E+0&text=&objectIds=&time=&geometry=&geometryType=esriGeometryPoint&inSR=&spatialRel=esriSpatialRelIntersects&relationParam=&outFields=*&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&returnDistinctValues=false&resultOffset=&resultRecordCount=&f=pjson']
         },
         SC: {
             data(res) {
@@ -1483,26 +1519,44 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             },
             URL: ['https://sc.cdn.iteris-atis.com/geojson/icons/metadata/icons.cameras.geojson']
         },
+        SD: {
+            data(res) {
+                return res.features ;
+            },
+            scheme(obj) {
+                return {
+                    state: "SD",
+                    camType: 1,
+                    lon: obj.geometry.coordinates[0],
+                    lat: obj.geometry.coordinates[1],
+                    src: obj.properties.cameras[0].image,
+                    desc: obj.properties.cameras[0].description,
+                    width: 480,
+                    height: 360
+            };
+        },
+            URL: ["https://sd.cdn.iteris-atis.com/geojson/icons/metadata/icons.cameras.geojson"]
+    },
         TN: {
             data(res) {
-                return res.actions;
+                return res;
             },
             scheme(obj) {
                 return {
                     state: "TN",
                     camType: 0,
-                    lon: obj.dataItem.coordinates.lng,
-                    lat: obj.dataItem.coordinates.lat,
-                    src: obj.dataItem.httpsVideoUrl,
-                    desc: obj.dataItem.title,
+                    lon: obj.location.coordinates[0].lng,
+                    lat: obj.location.coordinates[0].lat,
+                    src: obj.httpsVideoUrl,
+                    desc: obj.description,
                     width: 480,
                     height: 360
                 };
             },
-            URL: ['https://smartway.tn.gov/Traffic/api/Cameras/0']
+            URL: ['http://40.121.218.107:8080/TNCam']
         },
         TX: {
-            data(res) { return res }, scheme(obj) { return { state: "TX", camType: 1, lon: obj.location.longitude, lat: obj.location.latitude, src: obj.screenshot_address, desc: obj.location_name } },
+            data(res) { return res; }, scheme(obj) { return { state: "TX", camType: 1, lon: obj.location.longitude, lat: obj.location.latitude, src: obj.screenshot_address, desc: obj.location_name }; },
             URL: ['https://data.austintexas.gov/resource/b4k4-adkb.json']
         }, // TX isn't working until we figure out POST/response
         UT: {
@@ -1540,20 +1594,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         WA: {
             data(res) {
-                return res.feed.entry;
+                return res;
             },
             scheme(obj) {
-                let cam = obj.gs$cell.inputValue.split("|");
-                return {
+               return {
                     state: "WA",
                     camType: 1,
-                    lon: cam[2],
-                    lat: cam[3],
-                    src: cam[4],
-                    desc: cam[5]
+                    lon: obj.CameraLocation.Longitude,
+                    lat: obj.CameraLocation.Latitude,
+                    src: obj.ImageURL,
+                    desc: obj.Title
                 };
             },
-            URL: ['https://spreadsheets.google.com/feeds/cells/1TUXtPnGHtcXsHw8Y3nxwqWGH_Waj9dcMlmwTcb2nW2k/10/public/full?alt=json']
+            URL: ['http://40.121.218.107:8080/WACam']
         },
         WI: {
             data(res) {
@@ -1589,12 +1642,11 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         WY: {
             data(res) {
-                return res.features
+                return res.features;
             },
             scheme(obj) {
-                let LonLat = new OpenLayers.LonLat([obj.geometry.x, obj.geometry.y]).transform('EPSG:3857', 'EPSG:4326')
-                console.log(obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0])
-                return { state: "WY", camType: 5, lon: LonLat.lon, lat: LonLat.lat, src: obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0], desc: obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*?(?=<\/i><br\/><a href)/)[0] }
+                let LonLat = new OpenLayers.LonLat([obj.geometry.x, obj.geometry.y]).transform('EPSG:3857', 'EPSG:4326');
+                return { state: "WY", camType: 5, lon: LonLat.lon, lat: LonLat.lat, src: obj.attributes.IMAGEMARKUP.match(/(?=https:\/\/webcams)[\s\S]*?(?<=\.jpg)/)[0], desc: obj.attributes.IMAGEMARKUP.match(/(?<=<p><i>)[\s\S]*?(?=<\/i><br\/><a href)/)[0] };
             },
             URL: ['https://map.wyoroad.info/wtimap/data/wtimap-webcameras.json']
         }
