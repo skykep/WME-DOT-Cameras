@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.58
+// @version      1.59
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -1638,19 +1638,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         WV: {
             data(res) {
-                return res.changes["com.orci.opentms.web.public511.components.camera.shared.data.CameraBean"].changes;
+                return res.cams;
             },
             scheme(obj) {
                 return {
                     state: "WV",
                     camType: 0,
-                    lon: obj.entity.x,
-                    lat: obj.entity.y,
-                    src: obj.entity.realTimeMessageUrl,
-                    desc: obj.entity.description
+                    lon: obj.start_lng,
+                    lat: obj.start_lat,
+                    src: 'https://sfs1.roadsummary.com/rtplive/' + obj.md5 + '/playlist.m3u8',
+                    desc: obj.title
                 };
             },
-            URL: ['http://72.167.49.86:8080/WV']
+            URL: ['http://72.167.49.86:8080/WVCam']
         },
         WY: {
             data(res) {
