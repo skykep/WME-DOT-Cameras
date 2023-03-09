@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.59
+// @version      1.60
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -68,7 +68,6 @@
 // @connect      ncdot.gov
 // @connect      carsprogram.org
 // @connect      ksdot.org
-// @connect      72.167.49.86
 // @connect      iteris-atis.com
 /* global OpenLayers */
 /* global W */
@@ -87,7 +86,7 @@ var localsettings = {}, settings, video, player, hls, staticUpdateID, newZIndex;
 var state, stateLength, settingID, cameraKeys = [];
 let mapBounds;
 let showUpdate = false;
-const updateMessage = "&#9658; Updated Relay Source";
+const updateMessage = "&#9658; Fixed zoom level toggle / added clickable link for static images";
 const x2js = new X2JS();
 const camIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAGXcA1uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpBRDNGNTkwRTYzQThFMzExQTc4MDhDNjAwODdEMzdEQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo2OUI0RUEyN0IwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2OUI0RUEyNkIwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1LjEgV2luZG93cyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjZGOEJBMzExNkZCMEUzMTFCOEY5QTU3QUQxM0M2MjI5IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkFEM0Y1OTBFNjNBOEUzMTFBNzgwOEM2MDA4N0QzN0RBIi8+IDwvcmRmOkRlc2NyaXB0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';
 const camRed = 'data:image/gif;base64,R0lGODlhGAAYAOYAAAsKABAOAA4MAHI0DmsxDWItDEkiCWcwDVcoC04kCkghCUYgCXw5EF0rDFIlCjcYB4M7ET0bCI5AE4c9EqNFFp5EFZtEFahHF6pIGK1HGK9IGblKG7hIG7NHGiUPBsBJHcJJHsJKHiUOBshIH8ZIH8ZJH81HIcxHIctHIc5FIs5GItFDI8Y/IdNCJNJDJM1AI8xAI8lAIsc/IsM/IcI+Ib48IL49IL08ILs6ILs7IM9BJLc5INQ/Jc4/JLk5ILc4ILY4ILU2ILU3ILM1INU+JrQ0ILM0INY8J7IyILI0ILExINY7J9c5KNY5KNc2KRIEA9c1Kdc0KtcxKxEDA9cuK9csLNctLNcuLAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFkALAAAAAAYABgAAAfZgFmCg4SFhoeGQTc1P4iOOUxVkpNQNI6ETZOak1KXWZugkzuIoaVVSIZOVSsDJVamk4U5khRYWA8WLbAyhKpVCLa2Uw0bUaWEkkRTwcweEyagSoJCkisLy8zBUwoYR5MdgjWaJxAi2cxPByFVJII2oCnMUwbYUxouVSOCP6A8EcIVqvC4gODDJA6DQjkJkICBqSKDpICiIoAILEI0JgJYYqpHIUkoQIxQkWEKFFOGjFSRQKCBgwIgTOE45OMKrEksHCW5WSWHpywxSun4SWjIDBgvWAAhytRQIAA7';
@@ -103,6 +102,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 installIcon();
             }
             init();
+            //getFeed("http://72.167.49.86:8080/user?user=" + W.loginManager.user.userName, "text", "");
             console.log("WME DOT Cameras Loaded!");
         } else if (tries < 1000) {
             setTimeout(function () {
@@ -120,7 +120,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<table border=1 style="text-align:center;width:90%;padding:10px;">',
             '<tr><td width=80 style="text-align:center"><b>Enable</b></td><td style="text-align:center"><b>Setting</b></td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkHideZoomOut" class="wmeDOTCamSettings"></td><td align=center>',
-            'Hide at zoom: <select class="wmeDOTCamSettings" id="valueHideZoomLevel">',
+            'Hide at zoom: <select class="wmeDOTCamSettings" id="valueHideZoomLevelCam">',
             '<option value=12>12</option>',
             '<option value=13>13</option>',
             '<option value=14>14</option>',
@@ -200,8 +200,9 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         $('#chkHideZoomOut').change(function () {
             redrawCams();
         });
-        $('#valueHideZoomLevel').change(function () {
+        $('#valueHideZoomLevelCam').change(function () {
             redrawCams();
+            //saveSettings();
         });
     }
     function setEnabled(value) {
@@ -220,9 +221,10 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         mapBounds = W.map.getExtent();
         mapBounds.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:4326"));
     }
-    getFeed("http://72.167.49.86:8080/CSS", "css", "", function (result) {
-        GM_addStyle(result);
-    });
+    // getFeed("http://72.167.49.86:8080/CSS", "css", "", function (result) {
+    //     GM_addStyle(result);
+    // });
+
     //Build the State Layers
     function buildDOTCamLayers(state) {
         eval(state.substring(0, 2) + 'Layer = new OpenLayers.Layer.Markers("' + state.substring(0, 2) + 'Layer")');
@@ -241,7 +243,8 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             }
         });
     }
-    function redrawCams() {
+    async function redrawCams() {
+        await W.map.getZoom();
         for (const property in settings) {
             let state = property.replace("chk", "").replace("CamEnabled", "");
             if (state.length == 2) {
@@ -251,10 +254,11 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     eval('testCam(' + state + 'Feed, config.' + state + ')');
                     if (W.map.getZoom() >= 12) {
                         if (document.getElementById('chkHideZoomOut').checked) {
-                            if (W.map.getZoom() > document.getElementById('valueHideZoomLevel').value) {
+                            if (W.map.getZoom() > document.getElementById('valueHideZoomLevelCam').value) {
                                 eval(state + 'Layer.setVisibility(true)');
                             } else {
                                 eval(state + 'Layer.setVisibility(false)');
+                                console.log("disabling " + state);
                             }
                         } else {
                             eval(state + 'Layer.setVisibility(true)');
@@ -283,7 +287,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 testCam(resultObj, state);
                 if (localsettings.enabled) {
                     if (document.getElementById('chkHideZoomOut').checked) {
-                        if (W.map.getZoom() > document.getElementById('valueHideZoomLevel').value) {
+                        if (W.map.getZoom() > document.getElementById('valueHideZoomLevelCam').value) {
                             eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(true)');
                         } else {
                             eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(false)');
@@ -365,7 +369,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
             '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;">' + this.title + '</div></td></tr>' +
             '<tr><td><center>' + this.title + '</td></tr>' +
-            '<tr><td><img src="' + this.url + '" style="width:400px" id="staticimage"></td></tr>' +
+            '<tr><td><a href="" id="camType1href" target="_blank"><img src="' + this.url + '" style="width:400px" id="staticimage"></a></td></tr>' +
             '</table></div>'
         ]);
         let metaHead = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *;**script-src 'self' http://onlineerp.solution.quebec 'unsafe-inline' 'unsafe-eval';** "></meta>`;
@@ -383,7 +387,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
             '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;"></div></td></tr>' +
             '<tr><td><center><h4><div id="titleNC" >' + titleNC + '</div></h4></td></tr>' +
-            '<tr><td><img src="' + this.url + '" style="width:400px" id="staticimage"></td></tr>' +
+            '<tr><td><a href="" id="camType4href" target="_blank"><img src="' + this.url + '" style="width:400px" id="staticimage"></a></td></tr>' +
             '</table></div>'
         ]);
         popupHTML[5] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
@@ -416,8 +420,14 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 $("body").append(popupHTML[1]);
                 staticUpdateID = setInterval(function () {
                     var camImage = document.getElementById('staticimage');
-                    if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}`; }
-                    else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
+                    if (currentCamURL.includes('?')) {
+                        camImage.src = `${currentCamURL}&rand=${Math.random()}`;
+                        document.getElementById('camType1href').href = camImage.src;
+                    }
+                    else {
+                        camImage.src = currentCamURL + '?rand=' + Math.random();
+                        document.getElementById('camType1href').href = camImage.src;
+                    }
                 }, 5000);
                 break;
             case 2:
@@ -504,8 +514,14 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     document.getElementById("titleNC").innerHTML = titleNC;
                     staticUpdateID = setInterval(function () {
                         var camImage = document.getElementById('staticimage');
-                        if (currentCamURL.includes('?')) { camImage.src = `${currentCamURL}&rand=${Math.random()}`; }
-                        else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
+                        if (currentCamURL.includes('?')) {
+                            camImage.src = `${currentCamURL}&rand=${Math.random()}`;
+                            document.getElementById('camType4href').href = camImage.src;
+                        }
+                        else {
+                            camImage.src = currentCamURL + '?rand=' + Math.random();
+                            document.getElementById('camType4href').href = camImage.src;
+                        }
                     }, 100);
                 });
                 break;
@@ -599,7 +615,10 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "checkbox") {
                 setChecked(settingID, eval('settings.' + settingID));
             } else if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "select-one") {
-                $("#valueHideZoomLevel").val(eval('settings.' + settingID)).change();
+                document.getElementById('valueHideZoomLevelCam').value = eval('settings.' + settingID);
+                //alert(document.getElementById('valueHideZoomLevelCam').value + " : " + eval('settings.' + settingID));
+                //$("#valueHideZoomLevelCam").val(eval('settings.' + settingID)).change();
+
             }
         }
         //Build the layers for the selected states
