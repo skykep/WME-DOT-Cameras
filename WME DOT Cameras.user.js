@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.61
+// @version      1.62
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -186,7 +186,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '</table>',
             '</div>'
         ].join(' '));
-        new WazeWrap.Interface.Tab('DOT Cameras', $section.html(), initializeSettings);
+        WazeWrap.Interface.Tab('DOT Cameras', $section.html(), initializeSettings, '<span title="DOT Cameras">DOT Cameras</span>');
         if (showUpdate) {
             WazeWrap.Interface.ShowScriptUpdate("WME DOT Cameras", GM_info.script.version, updateMessage, "https://greasyfork.org/en/scripts/407690-wme-dot-cameras", "https://www.waze.com/forum/viewtopic.php?f=819&t=304760");
         }
@@ -670,7 +670,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             }
         }
         const color = localsettings.enabled ? '#00bd00' : '#ccc';
-        $('a[href="#sidepanel-dotcameras"]').prepend(
+        $('span[title="DOT Cameras"]').prepend(
             $('<span>', {
                 class: 'fa fa-power-off',
                 id: 'dot-cameras-power-btn',
