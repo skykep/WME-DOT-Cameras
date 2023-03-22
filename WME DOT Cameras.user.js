@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.63
+// @version      1.63.1
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -71,6 +71,7 @@
 // @connect      iteris-atis.com
 // @connect      quebec511.info
 // @connect      transports.gouv.qc.ca
+// @connect      ville.montreal.qc.ca
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -1524,6 +1525,16 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 return res.features
             },
             scheme(obj) {
+                if (obj.properties.titre) {
+                    return {
+                        state: "QC",
+                        camType: 1,
+                        lon: obj.geometry.coordinates[0],
+                        lat: obj.geometry.coordinates[1],
+                        src: obj.properties["url-image-en-direct"],
+                        desc: obj.properties.titre
+                    }}
+                   else {
                 return {
                     state: "QC",
                     camType: 5,
@@ -1531,10 +1542,10 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     lat: obj.geometry.coordinates[1],
                     src: "https://www.quebec511.info/Carte/Fenetres/FenetreVideo.html?format=mp4&id=" + obj.properties.IDEcamera,
                     desc: obj.properties.DescriptionLocalisationFr,
-                    subtitle: obj.properties.DescriptionLocalisationEn
-                }
+                    //subtitle: obj.properties.DescriptionLocalisationEn
+                }}
             },
-            URL: ["https://ws.mapserver.transports.gouv.qc.ca/swtq?service=wfs&version=2.0.0&request=getfeature&typename=ms:infos_cameras&outfile=Camera&srsname=EPSG:4326&outputformat=geojson"]
+            URL: ["https://ville.montreal.qc.ca/circulation/sites/ville.montreal.qc.ca.circulation/files/cameras-de-circulation.json", "https://ville.montreal.qc.ca/circulation/sites/ville.montreal.qc.ca.circulation/files/cameras-de-circulation.json"]
         },
         RI: {
             data(res) {
