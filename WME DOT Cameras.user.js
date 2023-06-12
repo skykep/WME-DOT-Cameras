@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.63.1
+// @version      1.64
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -15,9 +15,7 @@
 // @require      https://unpkg.com/video.js/dist/video.js
 // @require      https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js
-// @connect      essentialintegrations.com
 // @connect      72.167.49.86
-// @connect      repl.co
 // @connect      jsdelivr.net
 // @connect      511pa.com
 // @connect      deldot.gov
@@ -72,6 +70,7 @@
 // @connect      quebec511.info
 // @connect      transports.gouv.qc.ca
 // @connect      ville.montreal.qc.ca
+// @connect      txdot.gov
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -180,7 +179,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<tr><td align=center><input type="checkbox" id="chkSCCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>SC</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkSDCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>SD</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkTNCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TN</td></tr>',
-            '<tr><td align=center><input type="checkbox" id="chkTXCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TX (Austin only)</td></tr>',
+            '<tr><td align=center><input type="checkbox" id="chkTXCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>TX</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkUTCamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>UT</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkVACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>VA</td></tr>',
             '<tr><td align=center><input type="checkbox" id="chkWACamEnabled" class="wmeDOTCamCheckbox"></td><td align=center>WA</td></tr>',
@@ -401,6 +400,12 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<tr><td><a href="' + this.url + '" target="_blank">Click here to view image</a></td></tr>' +
             '</table></div>'
         ]);
+        popupHTML[6] = (['<div id="gmPopupContainerCam" style="position: fixed;padding: 10px;z-index: 1100;background: #fefefe;border-radius: 12px;">'+
+            '<div style="padding: 5px;"><h4 style="display: inline-block;">' +
+            '<div id="titleNC">' + titleNC + '</div></h4>' +
+            '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="float: right;text-decoration: none;font-size: 24px;line-height: 24px;">✖</a>' +
+            '</div><img src="' + this.url + '" style="width:400px;border-radius: 6px;" id="staticimage"></div>'
+        ]);
         var currentCamURL = this.url;
         switch (this.camType) {
             case 0:
@@ -537,6 +542,17 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     else { camImage.src = currentCamURL + '?rand=' + Math.random(); }
                 }, 5000);
                 break;
+            case 6:
+                $("body").append(popupHTML[6]);
+                getFeed(`https://its.txdot.gov/its/DistrictIts/GetCctvSnapshotByIcdId?icdId=${currentCamURL[0]}&districtCode=${currentCamURL[1]}`, 'json', "", function (res) {
+                    titleNC = currentCamURL[0];
+                    currentCamURL = "data:image/jpeg;base64," + JSON.parse(res).snippet;
+                    document.getElementById("titleNC").innerHTML = titleNC;
+                    var camImage = document.getElementById('staticimage');
+                    camImage.src = currentCamURL;
+                    document.getElementById('camType4href').href = camImage.src;
+                });
+                break;
         }
         //Position the modal based on the position of the click event
         $("#gmPopupContainerCam").css({ left: document.getElementById("user-tabs").offsetWidth + W.map.getPixelFromLonLat(W.map.getCenter()).x - document.getElementById("gmPopupContainerCam").clientWidth - 10 });
@@ -632,7 +648,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         }
         document.getElementById('chkFLCamEnabled').disabled = true; // need to figure out tokens
         document.getElementById('chkARCamEnabled').disabled = true; // need to figure out tokens
-        document.getElementById('chkTXCamEnabled').disabled = true; // not working
+        //document.getElementById('chkTXCamEnabled').disabled = true; // not working
 
 
         //Add Handler for Checkbox Setting Changes
@@ -855,7 +871,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         CA: {
             data(res) {
-                return res.data;
+                return res;
             },
             scheme(obj) {
                 return {
@@ -867,7 +883,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                     desc: obj.cctv.location.locationName
                 };
             },
-            URL: ['http://cwwp2.dot.ca.gov/data/d1/cctv/cctvStatusD01.json', 'http://cwwp2.dot.ca.gov/data/d2/cctv/cctvStatusD02.json', 'http://cwwp2.dot.ca.gov/data/d3/cctv/cctvStatusD03.json', 'http://cwwp2.dot.ca.gov/data/d4/cctv/cctvStatusD04.json', 'http://cwwp2.dot.ca.gov/data/d5/cctv/cctvStatusD05.json', 'http://cwwp2.dot.ca.gov/data/d6/cctv/cctvStatusD06.json', 'http://cwwp2.dot.ca.gov/data/d7/cctv/cctvStatusD07.json', 'http://cwwp2.dot.ca.gov/data/d8/cctv/cctvStatusD08.json', 'http://cwwp2.dot.ca.gov/data/d9/cctv/cctvStatusD09.json', 'http://cwwp2.dot.ca.gov/data/d10/cctv/cctvStatusD10.json', 'http://cwwp2.dot.ca.gov/data/d11/cctv/cctvStatusD11.json', 'http://cwwp2.dot.ca.gov/data/d12/cctv/cctvStatusD12.json']
+            URL: ['http://192.168.50.105:8080/CACam']
         },
         CO: {
             data(res) {
@@ -1618,9 +1634,21 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             URL: ['http://72.167.49.86:8080/TNCam']
         },
         TX: {
-            data(res) { return res; }, scheme(obj) { return { state: "TX", camType: 1, lon: obj.location.longitude, lat: obj.location.latitude, src: obj.screenshot_address, desc: obj.location_name }; },
-            URL: ['https://data.austintexas.gov/resource/b4k4-adkb.json']
-        }, // TX isn't working until we figure out POST/response
+            data(res) {
+                return res;
+            },
+            scheme(obj) {
+                return {
+                    state: "TX",
+                    camType: 6,
+                    lon: obj.longitude,
+                    lat: obj.latitude,
+                    src: [obj.icd_Id, obj.netId],
+                    desc: obj.name
+                };
+            },
+            URL: ["http://72.167.49.86:8080/TXCam"]
+        },
         UT: {
             x(res) {
                 return res.kml.Document.Placemark;
