@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.65
+// @version      1.66
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -224,9 +224,16 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         mapBounds = W.map.getExtent();
         mapBounds.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:4326"));
     }
-    // getFeed("http://72.167.49.86:8080/CSS", "css", "", function (result) {
-    //     GM_addStyle(result);
-    // });
+
+    //Load the CSS
+    GM_xmlhttpRequest({
+        method: "GET",
+        url: 'http://72.167.49.86:8080/CSS',
+        onload: function (response) {
+            var result = response.responseText;
+            GM_addStyle(result);
+        }
+    });
 
     //Build the State Layers
     function buildDOTCamLayers(state) {
@@ -400,7 +407,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
             '<tr><td><a href="' + this.url + '" target="_blank">Click here to view image</a></td></tr>' +
             '</table></div>'
         ]);
-        popupHTML[6] = (['<div id="gmPopupContainerCam" style="position: fixed;padding: 10px;z-index: 1100;background: #fefefe;border-radius: 12px;">'+
+        popupHTML[6] = (['<div id="gmPopupContainerCam" style="position: fixed;padding: 10px;z-index: 1100;background: #fefefe;border-radius: 12px;">' +
             '<div style="padding: 5px;"><h4 style="display: inline-block;">' +
             '<div id="titleNC">' + titleNC + '</div></h4>' +
             '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="float: right;text-decoration: none;font-size: 24px;line-height: 24px;">✖</a>' +
@@ -1560,17 +1567,19 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                         lat: obj.geometry.coordinates[1],
                         src: obj.properties["url-image-en-direct"],
                         desc: obj.properties.titre
-                    }}
-                   else {
-                return {
-                    state: "QC",
-                    camType: 5,
-                    lon: obj.geometry.coordinates[0],
-                    lat: obj.geometry.coordinates[1],
-                    src: "https://www.quebec511.info/Carte/Fenetres/FenetreVideo.html?format=mp4&id=" + obj.properties.IDEcamera,
-                    desc: obj.properties.DescriptionLocalisationFr,
-                    //subtitle: obj.properties.DescriptionLocalisationEn
-                }}
+                    }
+                }
+                else {
+                    return {
+                        state: "QC",
+                        camType: 5,
+                        lon: obj.geometry.coordinates[0],
+                        lat: obj.geometry.coordinates[1],
+                        src: "https://www.quebec511.info/Carte/Fenetres/FenetreVideo.html?format=mp4&id=" + obj.properties.IDEcamera,
+                        desc: obj.properties.DescriptionLocalisationFr,
+                        //subtitle: obj.properties.DescriptionLocalisationEn
+                    }
+                }
             },
             URL: ["https://ville.montreal.qc.ca/circulation/sites/ville.montreal.qc.ca.circulation/files/cameras-de-circulation.json", "https://ws.mapserver.transports.gouv.qc.ca/swtq?service=wfs&version=2.0.0&request=getfeature&typename=ms:infos_cameras&outfile=Camera&srsname=EPSG:4326&outputformat=geojson"]
         },
