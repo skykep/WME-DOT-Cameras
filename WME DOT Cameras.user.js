@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.67
+// @version      1.68
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -71,6 +71,7 @@
 // @connect      transports.gouv.qc.ca
 // @connect      ville.montreal.qc.ca
 // @connect      txdot.gov
+// @connect      arcadis-ivds.com
 /* global OpenLayers */
 /* global W */
 /* global WazeWrap */
@@ -86,14 +87,16 @@ let ALLayer, AKLayer, AZLayer, ARLayer, CALayer, COLayer, CTLayer, DELayer, DCLa
 let ALFeed = [], AKFeed = [], AZFeed = [], ARFeed = [], CAFeed = [], COFeed = [], CTFeed = [], DEFeed = [], DCFeed = [], FLFeed = [], GAFeed = [], HIFeed = [], IDFeed = [], ILFeed = [], INFeed = [], IAFeed = [], KSFeed = [], KYFeed = [], LAFeed = [], MEFeed = [], MDFeed = [], MAFeed = [], MIFeed = [], MNFeed = [], MSFeed = [], MOFeed = [], MTFeed = [], NEFeed = [], NVFeed = [], NHFeed = [], NJFeed = [], NMFeed = [], NYFeed = [], NWFeed = [], NCFeed = [], NDFeed = [], OHFeed = [], OKFeed = [], ORFeed = [], PAFeed = [], QCFeed = [], RIFeed = [], SCFeed = [], SDFeed = [], TNFeed = [], TXFeed = [], UTFeed = [], VTFeed = [], VAFeed = [], WAFeed = [], WIFeed = [], WVFeed = [], WYFeed;
 var localsettings = {}, settings, video, player, hls, staticUpdateID, newZIndex;
 var state, stateLength, settingID, cameraKeys = [];
+var paToken = "";
 let mapBounds;
 let showUpdate = false;
-const updateMessage = "&#9658; Fix for WME Update";
+const updateMessage = "&#9658; Fix for new PA format";
 const x2js = new X2JS();
 const camIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAGXcA1uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpBRDNGNTkwRTYzQThFMzExQTc4MDhDNjAwODdEMzdEQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo2OUI0RUEyN0IwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2OUI0RUEyNkIwRjcxMUUzOERFM0E1OTJCRUY3NTFBOCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1LjEgV2luZG93cyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjZGOEJBMzExNkZCMEUzMTFCOEY5QTU3QUQxM0M2MjI5IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkFEM0Y1OTBFNjNBOEUzMTFBNzgwOEM2MDA4N0QzN0RBIi8+IDwvcmRmOkRlc2NyaXB0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';
 const camRed = 'data:image/gif;base64,R0lGODlhGAAYAOYAAAsKABAOAA4MAHI0DmsxDWItDEkiCWcwDVcoC04kCkghCUYgCXw5EF0rDFIlCjcYB4M7ET0bCI5AE4c9EqNFFp5EFZtEFahHF6pIGK1HGK9IGblKG7hIG7NHGiUPBsBJHcJJHsJKHiUOBshIH8ZIH8ZJH81HIcxHIctHIc5FIs5GItFDI8Y/IdNCJNJDJM1AI8xAI8lAIsc/IsM/IcI+Ib48IL49IL08ILs6ILs7IM9BJLc5INQ/Jc4/JLk5ILc4ILY4ILU2ILU3ILM1INU+JrQ0ILM0INY8J7IyILI0ILExINY7J9c5KNY5KNc2KRIEA9c1Kdc0KtcxKxEDA9cuK9csLNctLNcuLAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAFkALAAAAAAYABgAAAfZgFmCg4SFhoeGQTc1P4iOOUxVkpNQNI6ETZOak1KXWZugkzuIoaVVSIZOVSsDJVamk4U5khRYWA8WLbAyhKpVCLa2Uw0bUaWEkkRTwcweEyagSoJCkisLy8zBUwoYR5MdgjWaJxAi2cxPByFVJII2oCnMUwbYUxouVSOCP6A8EcIVqvC4gODDJA6DQjkJkICBqSKDpICiIoAILEI0JgJYYqpHIUkoQIxQkWEKFFOGjFSRQKCBgwIgTOE45OMKrEksHCW5WSWHpywxSun4SWjIDBgvWAAhytRQIAA7';
 const staticIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABDBJREFUeNrEV21sU1UYfu7t7W67tmPrWOYmyYCVTFEhqOlYxBA0sh8CMTgI/sAYRI2gQaMJ/CP+IDFRI/xAA/xSxC8+YhRENNmCQWUThs648LFiR8w2WNttXfdx14/j+561w2W92rq2nmTJes4953nOeZ/zvOdVhBBNAN6MxeK1Z87+hou//oHem4NQFAW5bISDqspSPLB0ARpX3gdNs/ioe5dCA9ev+HoX7H7rBNoudSEyYiAajSEfzWrV4HTo8N7vwRuvrUedp6pbGRufEE+9uB/nL1yjgVo0Pe5FxdySvBDoD4Rx7FQbbdSH+mUefPL+duDLb9pFzYOviPVb9opAcFjkuwVCw+LJrfsk5henLwj1fDsd++g4mtZ4Ue52It+tvMyJDYTFmK3tPqihwQhIgAUBT7WyUgfihBkaGoHKame9JxKiYARSWAQO7b8sMEG3RPydL/1vsSh8tbJeK2sCJ7+7hOOnfoaVwZJewXc8EU/g6Y0rsLLh7twRiIyMY++hM5hTYsf2Zx6Dz9+H3W+fQCAYhmaxIHUIzCMajeOa/yY+3r8N86rdsyMQJYG0nOtE8w+dOHL8R7icNoTDY/jl924MhUfpt33GHLsN6OkbwM49n+LRh++Z6o/TydQtrMKK5XUy5hkR+LMnhF17PsMt2mnZHIcUzcEjLdDJyew2q4y/YURJC3G5+yLqLyqaHGOTOfvT5dt6mYhi6eIafPTeNlSmMbi0BHhSglB45xxfBnE5bMkdCRqP4d675sGzsJJiL3C5qwdXfX3QdQ16kVX+TZ0mCZbXMrP3tAT4aqrqzOPi42Sl73iuEZueaEBFuUv2c/L68Og5fPD595KwqqrT5vFaZslNyyabxYjA85tX4eVnV08b4yy386U1GKewHCYiuq4i02SqZkqAd8873rhuuek3G9Z6J10ukcj4FmRMgONY4rLjzjvKTL/xzK+U6VYIkXsCHEPDiMEggZq1AfL2yZuh5J6AhYTVHxhCM/mDWeOxYCiSVsCzJsCLGrS7feSMV6/3zRjv6LyBA4ebKVSJtIaTk1ygk9n4um9hy6sHsWldAx7yLpKpnI3n6Mk2mV5t9E0WEkhPgBcwExKTCAQjePfQabxz4Oup8FitFumU6ab9EyHN9LjJ7cLDYzLp/Ht+j8v8YeaqLNysjKiartqOrY3w3+iHZs0+x09LbKSbxYuq5VMsYwKOYh0vbH6kIK8jFf9zU1Niy+buzho0icXuqrpLnbBQhgsNRApGYGBwRGK66a2hepfVwllsk++8YAFIMAZ7BmPWUyWmjI4asjRrpbqwnsg0ra3HXLcrL+BUFeHYV62Edbs04+LUf6Wrt4Yfm22ySjLkszvXimCl8dPNWZwsTl9PFqep8pyyWO23LR242OFHb/9gVn6eaTqvqqDyfMl8rF61hMhMlud/CTAAgS0zvPJ72lwAAAAASUVORK5CYII=';
 const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA/ppVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ1dWlkOjVEMjA4OTI0OTNCRkRCMTE5MTRBODU5MEQzMTUwOEM4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjk4MDFDMjUwNzIzRDExRTNBQTczRjkyOTZEQ0IyOTY0IiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjk4MDFDMjRGNzIzRDExRTNBQTczRjkyOTZEQ0IyOTY0IiB4bXA6Q3JlYXRvclRvb2w9IkFkb2JlIElsbHVzdHJhdG9yIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ1dWlkOmFiMzczNzVkLWIwYTYtNDRjNC04OTE4LWU4M2ZiOTRhOGY4NSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpjMjUyYWZlMC1mMjU0LWY5NDMtOGZiZi0wMTc3Mzc1ZWEzYzYiLz4gPGRjOnRpdGxlPiA8cmRmOkFsdD4gPHJkZjpsaSB4bWw6bGFuZz0ieC1kZWZhdWx0Ij5JbmNpZGVudHNfb3V0bGluZWQ8L3JkZjpsaT4gPC9yZGY6QWx0PiA8L2RjOnRpdGxlPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pmcc3z4AAASdSURBVHja7FdLaFxVGP7OPfc1M5lMJ5M0Gk0nNdE+sogPLNG2KNaFUksqlkAjSGtcCBJUWgouhErAUOhCwb2uXJQupCtF0I102SrEUsFNkRaxJJ3MTGbu+/j/J2lnKp04HdNkY+AnZ875/u9853/ce65QSmEz/wxs8t//AjZdgDkytL1j5whIaRKgvuERCIH9UDjHpsedRqATJwE8Yimcn5LuVv79deztEQJPU0Nf35AILCZq7lXX3jqds8DGY5574Cmgk6OS4PCoJaamcvSjO9HGY57jtQcqwFPot1V85lhByPHptzBw7jttz9H4eK8hnSQ+4xPmfjhlz5YtbQHprChH6vRrTuXQqddfgP3+HGSuANnVDYw9ix3XL+G3X68UfgkduFJ8L9Y7AvUYL+7MipMndig4eQdKNOqXx07exomdCoxh7LqmIFRwbYHP3t1uYHevgXq9CgRNre/X9ByvMYax7LN+EVA4/XKfMTbRJ3GzYiKs+lCh31gOA4Tlul5jDGPZZ10ERAp7C7aYmX7YgvIl6p4Fv+IjCcJGfZAAvxroNcYwln3Y978KkLVEfXK0z0yPmAbKNYEglAjKAZ06bIpAhKASIvBXMIxlH/Zljo4EcBUvRsl7e7vkgYMZC/Ua554E0An98j8iEFAEyh6CwNQYxrIP+zKH6ERATanhHtP46M2sgxydurRMdeeRAM+Ed8tD4gcNAV6g53zf1BjGsg/7Mgdz3ZcAeqbTo158fiRtP/SMsPAnEYYU3sAz6L+EV/IQeY0ijFnAko+I1lYwhvZhX+ZgLuZsW0BVqalRUx6ckA7lVMH3WMCqhSSEU+A3UhBTOgIWEBp3cOzDvszBXMzZlgCiHcwL8ekbho1UYIAKHoqinfirFlIaKAJJEDfVQKTnYlq7jWMf9mUO5mJO5l5TgNKXDDW3H/bAk7GFcqD0hnGTJTGFWatqdiRRVIS8dheWjDmYizmZW60lgACHt0EemVAOkdFJknubYbtY+nn+jl+ZxobltsQzF3MyN+9xV7cNF4f0YahVBkKlLp6UmeI+Kp4qvX5afjEkCjLloO/QK/rnXxe+pU6gqBiiZUt30Vl/UiHOxsvXLCGeJ+4b4nYEeHBLqVMHLKu4zzWROAmodmC2MEP4SA32Izu6W1u62K/nWuGZizmZm/fgvUTzlWw5US8Nm3JmMuMgQzOlVj2jn3pUSl0mRmY/RveecT2X2TWMq++8Te0QQtj39uSSzdKuk5aD+Uoy80cUX8gY4geTaiRPX2ezk92WMZaTWIiTNV9jyo8gM1m4xcZt2t1WRLrgIi6XIdzW10x6gGNMSkwKyzi7EM/S3pdlKpv7YCJvHf/wURvKVrApXKm1LC1h+SU4jgV7eBddk+qof/Mloks/IpNPI+W29nU5fY7CU90GbgRq8Eo9LplpQ4w/QZeaJBVhgaIr2rnKOGlUzn8BZ/7iynXg6mUYhfRqoP/lzU7p7aUs8Z7pJTEuHisOHe1z8FUPvUljhfY+lVkl9VdSXVrp5QyxUWjR5pe2FBCLVC43fRwTj1Mb0kVypBbrLtqQb3XqYkGZhCPw+98CDACt/EZVMWT0ogAAAABJRU5ErkJggg==';
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 (function () {
     'use strict';
@@ -339,6 +342,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         if (spec.subtitle != undefined) {
             newMarker.subtitle = spec.subtitle;
         } else { newMarker.subtitle = ""; }
+        newMarker.id = spec.id;
         newMarker.url = spec.src;
         newMarker.width = spec.width;
         newMarker.height = spec.height;
@@ -386,7 +390,7 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         popupHTML[2] = (['<div id="gmPopupContainerCam" style="margin: 1;text-align: center;padding: 5px;z-index: 1100">' +
             '<a href="#close" id="gmCloseCamDlgBtn" title="Close" class="modelCloseCam" style="color:#FF0000;">X</a>' +
             '<table border=0><tr><td><div id="mycamdivheader" style="min-height: 20px;">' + this.title + '</div></td></tr>' +
-            '<tr><td><center' + this.subtitle + '</td></tr>' +
+            '<tr><td><center>' + this.subtitle + '</td></tr>' +
             '<tr><td><div id="videoDiv">' +
             '<video id="hlsVideo" width=' + this.width + ' height=' + this.height + ' controls autoplay style="width:400px"></video>' +
             '</div></td></tr>' +
@@ -448,43 +452,57 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
                 break;
             case 2:
                 $("body").append(popupHTML[2]);
-                let paCamHeaders = '"Referer": "https://www.511pa.com/webmapi.aspx?VIEWLEVEL=XD&VIEWLEVEL2=&VIEWTYPE=IS&VIEWTYPEPTC=|PX|IF|&VIEWPTCONLY=0&LAT=&LNG=&ZOOM=&RCRS_ID=&GV=&WEBMAPKEY=&fingerprint=20210616164842", "Accept": "application/text"';
-                GM_xmlhttpRequest({
-                    method: "GET",
-                    headers: {
-                        "Referer": "https://www.511pa.com/webmapi.aspx?VIEWLEVEL=XD&VIEWLEVEL2=&VIEWTYPE=IS&VIEWTYPEPTC=|PX|IF|&VIEWPTCONLY=0&LAT=&LNG=&ZOOM=&RCRS_ID=&GV=&WEBMAPKEY=&fingerprint=20210616164842",
-                        "Accept": "application/text"
-                    },
-                    url: "https://www.511pa.com/wowzKey.aspx",
-                    onload: function (response) {
-                        let result = response.responseText;
-                        getFeed('https://www.511pa.com/flowplayeri.aspx?CAMID=' + currentCamURL, 'text', paCamHeaders, function (res) {
-                            let paCamURL;
-                            paCamURL = res.match(/(?=pa511).*(?=')/);
-                            if (paCamURL != null) {
-                                currentCamURL = "https://" + paCamURL + result;
-                            } else {
-                                paCamURL = res.match(/(?=\/\/).*(?=')/);
-                                currentCamURL = "https:" + paCamURL;
-                            }
-                            setTimeout(function () {
-                                video = document.getElementById('hlsVideo');
-                                var videoSrc = currentCamURL;
-                                if (hls) { hls.destroy(); }
-                                if (Hls.isSupported()) {
-                                    console.log('Loading video from ' + videoSrc);
-                                    hls = new Hls();
-                                    hls.loadSource(videoSrc);
-                                    hls.attachMedia(video);
-                                    hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                                        video.play();
-                                    });
+                console.log(paToken);
+                if (paToken == "") {
+                    GM_xmlhttpRequest({
+                        method: "GET",
+                        headers: {
+                            "Referer": "https://www.511pa.com",
+                            "Accept": "/"
+                        },
+                        url: "https://www.511pa.com/Camera/GetVideoUrl?cameraId=" + this.id + "--10&_=" + Date.now(),
+                        onload: function (response) {
+                            let result = response.responseText;
+                            GM_xmlhttpRequest({
+                                method: "POST",
+                                headers: {
+                                    "Referer": "https://www.511pa.com/",
+                                    "Accept": "*/*",
+                                    "Content-Length": "93",
+                                    "Content-Type": "application/json",
+                                    "Origin": "https://www.511pa.com",
+                                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+                                },
+                                data: result,
+                                url: "https://pa.arcadis-ivds.com/api/SecureTokenUri/GetSecureTokenUriBySourceId",
+                                onload: function (response) {
+                                    let result = response.responseText;
+                                    paToken = result.replaceAll('"', '');
+                                    loadPACam();
                                 }
-                            }, 1000);
-                        });
-                    }
-                });
-
+                            });
+                        }
+                    });
+                } else {
+                    loadPACam();
+                }
+                function loadPACam() {
+                    setTimeout(async function () {
+                        video = document.getElementById('hlsVideo');
+                        var videoSrc = currentCamURL + paToken;
+                        if (hls) { hls.destroy(); }
+                        if (Hls.isSupported()) {
+                            //console.log('Loading camera video from ' + videoSrc);
+                            hls = await new Hls();
+                            await hls.loadSource(videoSrc);
+                            await delay(1000);
+                            await hls.attachMedia(video);
+                            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                                video.play();
+                            });
+                        }
+                    }, 500);
+                }
                 break;
             case 3:
                 $("body").append(popupHTML[3]);
@@ -1509,48 +1527,36 @@ const warning = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABze
         },
         PA: {
             data(res) {
-                return res.cams;
+                return res;
             },
             scheme(obj) {
-                let online;
-                if (obj.title.includes("UNAVAILABLE")) { online = false; } else { online = true; }
-                if (obj.md5 == null) {
-                    return {
-                        state: "PA",
-                        enabled: online,
-                        camType: 1,
-                        lon: obj.start_lng,
-                        lat: obj.start_lat,
-                        src: "https://websvc.paturnpike.com/webmap/1_devices/null.jpg",
-                        desc: obj.title
-                    };
-                }
-                if (obj.md5.substring(0, 3) == "ptc") {
-                    return {
-                        state: "PA",
-                        enabled: online,
-                        camType: 1,
-                        lon: obj.start_lng,
-                        lat: obj.start_lat,
-                        src: "https://websvc.paturnpike.com/webmap/1_devices/" + obj.md5.replace("ptc_camera_", "cam") + ".jpg",
-                        desc: obj.title
-                    };
-                } else {
-                    let extra = "";
-                    if (obj.description.includes("Traffic closest")) {
-                        extra = "<font size=2>" + obj.description.match(/div id="camDescription">(.*?)<\/div/)[1] + "</font>";
-                    }
+                let online = !obj.videoDisabled;
+                if (obj.videoUrl != null) {
                     return {
                         state: "PA",
                         enabled: online,
                         camType: 2,
-                        lon: obj.start_lng,
-                        lat: obj.start_lat,
-                        src: obj.md5,
-                        desc: obj.title,
-                        subtitle: extra
+                        lon: obj.longitude,
+                        lat: obj.latitude,
+                        src: obj.videoUrl,
+                        id: obj.cameraId,
+                        desc: obj.displayName,
+                        subtitle: obj.directionDescriptions
+                    };
+                } else {
+                    return {
+                        state: "PA",
+                        enabled: online,
+                        camType: 1,
+                        lon: obj.longitude,
+                        lat: obj.latitude,
+                        src: 'https://www.511pa.com/map/Cctv/' + obj.id,
+                        id: obj.id,
+                        desc: obj.displayName,
+                        subtitle: ""
                     };
                 }
+
             },
             URL: ['http://72.167.49.86:8080/PACam']
         },
