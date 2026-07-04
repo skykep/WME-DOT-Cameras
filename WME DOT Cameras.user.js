@@ -913,7 +913,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
                     desc: obj.cctv.location.locationName
                 };
             },
-            URL: ['http://192.168.50.105:8080/CACam']
+            URL: ['http://192.168.50.105:8080/CACam'] // BROKEN: local LAN IP, only works on the original dev's machine. CA 511 API requires an API key; needs a public proxy route at 72.167.49.86:8080/CACam or a new approach.
         },
         CO: {
             data(res) {
