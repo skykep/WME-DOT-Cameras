@@ -1449,7 +1449,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
                     desc: obj.Name
                 };
             },
-            URL: ['http://newengland511.org/Traffic/GetCameras']
+            URL: ['http://newengland511.org/Traffic/GetCameras'] // BROKEN: endpoint redirects to /notfound. New API: feed=https://newengland511.org/map/mapIcons/Cameras, images=https://newengland511.org/map/Cctv/{itemId}, scheme needs rewrite (res.item2, location[0]=lat, location[1]=lon)
         },
         NY: {
             data(res) {
