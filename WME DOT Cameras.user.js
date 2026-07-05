@@ -2,7 +2,7 @@
 // @name         WME DOT Cameras
 // @namespace    https://greasyfork.org/en/users/668704-phuz
 // @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @version      1.69
+// @version      1.75
 // @description  Overlay DOT Cameras on the WME Map Object
 // @author       phuz, doctorblah
 // @include      /^https:\/\/(www|beta)\.waze\.com\/(?!user\/)(.{2,6}\/)?editor\/?.*$/
@@ -83,8 +83,8 @@
 
 // ==/UserScript==
 
-let ALLayer, AKLayer, AZLayer, ARLayer, CALayer, COLayer, CTLayer, DELayer, DCLayer, FLLayer, GALayer, HILayer, IDLayer, ILLayer, INLayer, IALayer, KSLayer, KYLayer, LALayer, MELayer, MDLayer, MALayer, MILayer, MNLayer, MSLayer, MOLayer, MTLayer, NELayer, NVLayer, NHLayer, NJLayer, NMLayer, NYLayer, NWLayer, NCLayer, NDLayer, OHLayer, OKLayer, ORLayer, PALayer, QCLayer, RILayer, SCLayer, SDLayer, TNLayer, TXLayer, UTLayer, VTLayer, VALayer, WALayer, WILayer, WVLayer, WYLayer;
-let ALFeed = [], AKFeed = [], AZFeed = [], ARFeed = [], CAFeed = [], COFeed = [], CTFeed = [], DEFeed = [], DCFeed = [], FLFeed = [], GAFeed = [], HIFeed = [], IDFeed = [], ILFeed = [], INFeed = [], IAFeed = [], KSFeed = [], KYFeed = [], LAFeed = [], MEFeed = [], MDFeed = [], MAFeed = [], MIFeed = [], MNFeed = [], MSFeed = [], MOFeed = [], MTFeed = [], NEFeed = [], NVFeed = [], NHFeed = [], NJFeed = [], NMFeed = [], NYFeed = [], NWFeed = [], NCFeed = [], NDFeed = [], OHFeed = [], OKFeed = [], ORFeed = [], PAFeed = [], QCFeed = [], RIFeed = [], SCFeed = [], SDFeed = [], TNFeed = [], TXFeed = [], UTFeed = [], VTFeed = [], VAFeed = [], WAFeed = [], WIFeed = [], WVFeed = [], WYFeed;
+const layers = {};
+const feeds = {};
 var localsettings = {}, settings, video, player, hls, staticUpdateID, newZIndex;
 var state, stateLength, settingID, cameraKeys = [];
 var paToken = "";
@@ -102,11 +102,11 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
     'use strict';
     //Bootstrap
     function bootstrap(tries = 1) {
-        if (W && W.loginManager && W.map && W.loginManager.user && W.model && W.model.states && W.model.states.getObjectArray().length && WazeWrap && WazeWrap.Ready) {
+        if (W && W.loginManager && W.map && W.loginManager.user && WazeWrap && WazeWrap.Ready && typeof getWmeSdk === 'function') {
             if (!OpenLayers.Icon) {
                 installIcon();
             }
-            init();
+            init().catch(e => console.error('[DOTCam] init() error:', e));
             //getFeed("http://72.167.49.86:8080/user?user=" + W.loginManager.user.userName, "text", "");
             console.log("WME DOT Cameras Loaded!");
         } else if (tries < 1000) {
@@ -116,7 +116,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         }
     }
     //Build the Tab and Settings Division
-    function init() {
+    async function init() {
         var $section = $("<div id=WMEDOTCameraPanel>");
         $section.html([
             '<div id="chkCameraEnables">',
@@ -192,12 +192,16 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
             '</table>',
             '</div>'
         ].join(' '));
-        WazeWrap.Interface.Tab('DOT Cameras', $section.html(), initializeSettings, '<span title="DOT Cameras">DOT Cameras</span>');
+        const sdk = getWmeSdk({ scriptId: 'WMEDOTCameras', scriptName: 'WME DOT Cameras' });
+        const { tabLabel, tabPane } = await sdk.Sidebar.registerScriptTab();
+        tabLabel.innerHTML = '<span title="DOT Cameras">DOT Cameras</span>';
+        tabPane.appendChild($section[0]);
+        initializeSettings();
         if (showUpdate) {
             WazeWrap.Interface.ShowScriptUpdate("WME DOT Cameras", GM_info.script.version, updateMessage, "https://greasyfork.org/en/scripts/407690-wme-dot-cameras", "https://www.waze.com/forum/viewtopic.php?f=819&t=304760");
         }
         getBounds();
-        W.map.events.register("moveend", W.map, function () {
+        W.map.getOLMap().events.register("moveend", null, function () {
             if (localsettings.enabled) {
                 getBounds();
                 redrawCams();
@@ -218,14 +222,13 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         $('span#dot-cameras-power-btn').css({ color });
         for (var i = 0; i < stateLength; i++) {
             state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
-            if (W.map.getLayersByName(state + 'Layer').length != "0") {
-                eval(state + 'Layer.setVisibility(' + value + ')');
+            if (layers[state]) {
+                layers[state].setVisibility(value);
             }
         }
     }
     function getBounds() {
-        mapBounds = new OpenLayers.Bounds(W.map.getExtent());
-        mapBounds = mapBounds.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3857"));
+        mapBounds = W.map.getOLMap().getExtent().clone().transform(W.map.getOLMap().getProjectionObject(), new OpenLayers.Projection("EPSG:4326"));
         return mapBounds;
     }
 
@@ -241,10 +244,10 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
     //Build the State Layers
     function buildDOTCamLayers(state) {
-        eval(state.substring(0, 2) + 'Layer = new OpenLayers.Layer.Markers("' + state.substring(0, 2) + 'Layer")');
-        eval('W.map.addLayer(' + state.substring(0, 2) + 'Layer)');
-        //eval(state + "Layer.setZIndex(" + newZIndex + ")");
-        W.map.getOLMap().setLayerIndex(eval(state.substring(0, 2) + 'Layer'), 10);
+        const st = state.substring(0, 2);
+        layers[st] = new OpenLayers.Layer.Markers(st + 'Layer');
+        W.map.getOLMap().addLayer(layers[st]);
+        W.map.getOLMap().setLayerIndex(layers[st], 10);
     }
     function getFeed(url, type, headers, callback) {
         GM_xmlhttpRequest({
@@ -258,27 +261,27 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         });
     }
     async function redrawCams() {
-        await W.map.getZoom();
+        await W.map.getOLMap().getZoom();
         for (const property in settings) {
             let state = property.replace("chk", "").replace("CamEnabled", "");
             if (state.length == 2) {
-                if (document.getElementById('chk' + state + 'CamEnabled').checked && (W.map.getLayersByName(state + 'Layer').length == 1)) {
-                    eval('W.map.removeLayer(' + state + 'Layer)');
+                if (document.getElementById('chk' + state + 'CamEnabled').checked && layers[state]) {
+                    W.map.getOLMap().removeLayer(layers[state]);
                     buildDOTCamLayers(state);
-                    eval('testCam(' + state + 'Feed, config.' + state + ')');
-                    if (W.map.getZoom() >= 12) {
+                    testCam(feeds[state] || [], config[state]);
+                    if (W.map.getOLMap().getZoom() >= 12) {
                         if (document.getElementById('chkHideZoomOut').checked) {
-                            if (W.map.getZoom() > document.getElementById('valueHideZoomLevelCam').value) {
-                                eval(state + 'Layer.setVisibility(true)');
+                            if (W.map.getOLMap().getZoom() > document.getElementById('valueHideZoomLevelCam').value) {
+                                layers[state].setVisibility(true);
                             } else {
-                                eval(state + 'Layer.setVisibility(false)');
+                                layers[state].setVisibility(false);
                                 console.log("disabling " + state);
                             }
                         } else {
-                            eval(state + 'Layer.setVisibility(true)');
+                            layers[state].setVisibility(true);
                         }
                     } else {
-                        eval(state + 'Layer.setVisibility(false)');
+                        layers[state].setVisibility(false);
                     }
                 }
             }
@@ -297,18 +300,19 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
                 } else {
                     resultObj = state.data(JSON.parse(res));
                 }
-                eval(state.scheme(resultObj[1]).state + 'Feed = resultObj');
+                const stCode = state.scheme(resultObj[1]).state;
+                feeds[stCode] = resultObj;
                 testCam(resultObj, state);
                 if (localsettings.enabled) {
                     if (document.getElementById('chkHideZoomOut').checked) {
-                        if (W.map.getZoom() > document.getElementById('valueHideZoomLevelCam').value) {
-                            eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(true)');
+                        if (W.map.getOLMap().getZoom() > document.getElementById('valueHideZoomLevelCam').value) {
+                            if (layers[stCode]) layers[stCode].setVisibility(true);
                         } else {
-                            eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(false)');
+                            if (layers[stCode]) layers[stCode].setVisibility(false);
                         }
                     }
                     else {
-                        eval(state.scheme(resultObj[1]).state + 'Layer.setVisibility(true)');
+                        if (layers[stCode]) layers[stCode].setVisibility(true);
                     }
                 }
             });
@@ -336,7 +340,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         }
         var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
         var epsg4326 = new OpenLayers.Projection("EPSG:4326"); //WGS 1984 projection
-        var projectTo = W.map.getProjectionObject(); //The map projection (Spherical Mercator)
+        var projectTo = W.map.getOLMap().getProjectionObject(); //The map projection (Spherical Mercator)
         var lonLat = new OpenLayers.LonLat(spec.lon, spec.lat).transform(epsg4326, projectTo);
         var newMarker = new OpenLayers.Marker(lonLat, icon);
         newMarker.title = spec.desc;
@@ -352,7 +356,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         newMarker.location = lonLat;
         //newMarker.setOpacity(.8);
         newMarker.events.register('click', newMarker, popupCam);
-        eval(spec.state + 'Layer.addMarker(newMarker)');
+        if (layers[spec.state]) layers[spec.state].addMarker(newMarker);
     }
     //Generate the Camera Popup
     function popupCam(evt) {
@@ -368,7 +372,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         clearInterval(staticUpdateID);
         $("#gmPopupContainerCam").remove();
         $("#gmPopupContainerCam").hide();
-        W.map.moveTo(this.location);
+        W.map.getOLMap().setCenter(this.location);
         var popupHTML = [];
         var titleNC = "";
 
@@ -583,8 +587,8 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
                 break;
         }
         //Position the modal based on the position of the click event
-        $("#gmPopupContainerCam").css({ left: document.getElementById("user-tabs").offsetWidth + W.map.getPixelFromLonLat(W.map.getUnprojectedCenter()).x - document.getElementById("gmPopupContainerCam").clientWidth - 10 });
-        $("#gmPopupContainerCam").css({ top: document.getElementById("left-app-head").offsetHeight + W.map.getPixelFromLonLat(W.map.getUnprojectedCenter()).y - (document.getElementById("gmPopupContainerCam").clientHeight / 2) });
+        $("#gmPopupContainerCam").css({ left: document.getElementById("user-tabs").offsetWidth + W.map.getOLMap().getPixelFromLonLat(W.map.getOLMap().getCenter()).x - document.getElementById("gmPopupContainerCam").clientWidth - 10 });
+        $("#gmPopupContainerCam").css({ top: document.getElementById("left-app-head").offsetHeight + W.map.getOLMap().getPixelFromLonLat(W.map.getOLMap().getCenter()).y - (document.getElementById("gmPopupContainerCam").clientHeight / 2) });
         //Add listener for popup's "Close" button
         $("#gmCloseCamDlgBtn").click(function () {
             if (hls) {
@@ -656,23 +660,21 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         //Set the state checkboxes according to saved settings
         for (var i = 0; i < stateLength; i++) {
             state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
-            setChecked('chk' + state + 'CamEnabled', eval('settings.' + state + 'CamEnabled'));
+            setChecked('chk' + state + 'CamEnabled', settings[state + 'CamEnabled']);
         }
         for (var i = 0; i < document.getElementsByClassName("wmeDOTCamSettings").length; i++) {
             settingID = document.getElementsByClassName("wmeDOTCamSettings")[i].id;
             if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "checkbox") {
-                setChecked(settingID, eval('settings.' + settingID));
+                setChecked(settingID, settings[settingID]);
             } else if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "select-one") {
-                document.getElementById('valueHideZoomLevelCam').value = eval('settings.' + settingID);
-                //alert(document.getElementById('valueHideZoomLevelCam').value + " : " + eval('settings.' + settingID));
-                //$("#valueHideZoomLevelCam").val(eval('settings.' + settingID)).change();
+                document.getElementById('valueHideZoomLevelCam').value = settings[settingID];
 
             }
         }
         //Build the layers for the selected states
         for (var i = 0; i < stateLength; i++) {
             state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
-            if (document.getElementById('chk' + state + 'CamEnabled').checked) { buildDOTCamLayers(state); eval('getCam(config.' + state + ')'); }
+            if (document.getElementById('chk' + state + 'CamEnabled').checked) { buildDOTCamLayers(state); getCam(config[state]); }
         }
         document.getElementById('chkFLCamEnabled').disabled = true; // need to figure out tokens
         document.getElementById('chkARCamEnabled').disabled = true; // need to figure out tokens
@@ -686,10 +688,10 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
             saveSettings();
             if (this.checked) {
                 buildDOTCamLayers(settingName.substring(0, 2));
-                eval("getCam(config." + settingName.substring(0, 2) + ")");
+                getCam(config[settingName.substring(0, 2)]);
             } else {
-                //eval(settingName.substring(0, 2) + "Layer.destroy()");
-                eval('W.map.removeLayer(' + settingName.substring(0, 2) + 'Layer)');
+                const st = settingName.substring(0, 2);
+                if (layers[st]) W.map.getOLMap().removeLayer(layers[st]);
             }
         });
         $('.wmeDOTCamSettings').change(function () {
@@ -709,7 +711,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
             localsettings.enabled = true;
             localStorage.setItem("Camera_Settings", JSON.stringify(localsettings));
         }
-        localsettings = $.parseJSON(localStorage.getItem("Camera_Settings"));
+        localsettings = JSON.parse(localStorage.getItem("Camera_Settings"));
         var defaultSettings = { Enabled: false, };
         settings = localsettings ? localsettings : defaultSettings;
         for (var prop in defaultSettings) {
@@ -735,15 +737,15 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
         if (localStorage) {
             for (var i = 0; i < stateLength; i++) {
                 state = document.getElementsByClassName("wmeDOTCamCheckbox")[i].id.replace("chk", "").replace("CamEnabled", "");
-                eval('localsettings.' + state + 'CamEnabled = document.getElementsByClassName("wmeDOTCamCheckbox")[i].checked');
+                localsettings[state + 'CamEnabled'] = document.getElementsByClassName("wmeDOTCamCheckbox")[i].checked;
             }
             for (var i = 0; i < document.getElementsByClassName("wmeDOTCamSettings").length; i++) {
                 if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "checkbox") {
                     settingID = document.getElementsByClassName("wmeDOTCamSettings")[i].id;
-                    eval('localsettings.' + settingID + ' = document.getElementsByClassName("wmeDOTCamSettings")[i].checked');
+                    localsettings[settingID] = document.getElementsByClassName("wmeDOTCamSettings")[i].checked;
                 } else if (document.getElementsByClassName("wmeDOTCamSettings")[i].type == "select-one") {
                     settingID = document.getElementsByClassName("wmeDOTCamSettings")[i].id;
-                    eval('localsettings.' + settingID + ' = document.getElementsByClassName("wmeDOTCamSettings")[i].value');
+                    localsettings[settingID] = document.getElementsByClassName("wmeDOTCamSettings")[i].value;
                 }
             }
             localStorage.setItem("Camera_Settings", JSON.stringify(localsettings));
@@ -911,7 +913,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
                     desc: obj.cctv.location.locationName
                 };
             },
-            URL: ['http://192.168.50.105:8080/CACam']
+            URL: ['http://192.168.50.105:8080/CACam'] // BROKEN: local LAN IP, only works on the original dev's machine. CA 511 API requires an API key; needs a public proxy route at 72.167.49.86:8080/CACam or a new approach.
         },
         CO: {
             data(res) {
@@ -1447,7 +1449,7 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
                     desc: obj.Name
                 };
             },
-            URL: ['http://newengland511.org/Traffic/GetCameras']
+            URL: ['http://newengland511.org/Traffic/GetCameras'] // BROKEN: endpoint redirects to /notfound. New API: feed=https://newengland511.org/map/mapIcons/Cameras, images=https://newengland511.org/map/Cctv/{itemId}, scheme needs rewrite (res.item2, location[0]=lat, location[1]=lon)
         },
         NY: {
             data(res) {
